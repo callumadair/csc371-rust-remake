@@ -1,8 +1,8 @@
-pub mod app;
+pub mod _371pass;
 mod wallet;
 mod category;
 mod item;
-use crate::app::app::run;
+
 fn main() {
-    return run();
+    return _371pass::app::run();
 }
