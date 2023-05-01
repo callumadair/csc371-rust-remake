@@ -15,38 +15,38 @@ impl Category {
         }
     }
 
-    fn size() -> usize {
+    pub(crate) fn size(&self) -> usize {
         return 0;
     }
 
-    fn empty() -> bool {
+    pub(crate) fn empty(&self) -> bool {
         return false;
     }
 
-    fn get_ident() -> String {
-        return self::identifier;
+    pub(crate) fn get_ident(&self) -> &String {
+        return &self.identifier;
     }
 
-    fn set_ident(identifier: String) -> () {
-        self::identifier = identifier;
+    pub(crate) fn set_ident(&mut self, identifier: String) -> () {
+        self.identifier = identifier;
     }
 
-    fn new_item(&mut self, item_identifier: &String) -> Item {
+    pub(crate) fn new_item(&mut self, item_identifier: &String) -> Item {
         let item = Item::new(item_identifier.to_string());
         return item;
     }
 
-    fn add_item(item: Item) -> bool {
+    pub(crate) fn add_item(&mut self, item: Item) -> bool {
         return false;
     }
 
-    fn merge_items(other: &mut Category) -> () {}
+    fn merge_items(&mut self, other: &mut Category) -> () {}
 
-    fn get_item(item_identifier: &String) -> Option<&Item> {
+    pub(crate) fn get_item(&self, item_identifier: &String) -> Option<&Item> {
         return None;
     }
 
-    fn delete_item(item_identifier: &String) -> bool {
+    pub(crate) fn delete_item(&mut self, item_identifier: &String) -> bool {
         return false;
     }
 }

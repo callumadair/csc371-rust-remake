@@ -7,38 +7,38 @@ pub(crate) struct Wallet {
 }
 
 impl Wallet {
-    fn new() -> Wallet {
+    pub(crate) fn new() -> Wallet {
         Wallet {
             categories: HashMap::new(),
         }
     }
 
-    fn size() -> usize {
+    pub(crate) fn size(&self) -> usize {
         return 0;
     }
 
-    fn empty() -> bool {
+    pub(crate) fn empty(&self) -> bool {
         return false;
     }
 
-    fn new_category(&mut self, category_identifier: &String) -> Category {
+    pub(crate) fn new_category(&mut self, category_identifier: &String) -> Category {
         let category = Category::new(category_identifier.to_string());
         return category;
     }
 
-    fn add_category(category: Category) -> bool {
+    pub(crate) fn add_category(&mut self, category: Category) -> bool {
         return false;
     }
 
-    fn delete_category(category_identifier: &String) -> bool {
+    pub(crate) fn delete_category(&mut self, category_identifier: &String) -> bool {
         return false;
     }
 
-    fn load(filename: &String) -> bool {
+    pub(crate) fn load(&self, filename: &String) -> bool {
         return false;
     }
 
-    fn save(filename: &String) -> bool {
+    pub(crate) fn save(&self, filename: &String) -> bool {
         return false;
     }
 }

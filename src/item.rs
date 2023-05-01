@@ -14,33 +14,33 @@ impl Item {
         }
     }
 
-    fn size() -> usize {
+    pub(crate) fn size(&self) -> usize {
         return 0;
     }
 
-    fn empty() -> bool {
+    pub(crate) fn empty(&self) -> bool {
         return false;
     }
 
-    fn get_ident() -> String {
-        return self::identifier;
+    pub(crate) fn get_ident(&self) -> &String {
+        return &self.identifier;
     }
 
-    fn set_ident(identifier: String) {
-        self::identifier = identifier;
+    pub(crate) fn set_ident(&mut self, identifier: String) {
+        self.identifier = identifier;
     }
 
-    fn add_entry(key: String, value: String) -> bool {
+    pub(crate) fn add_entry(&mut self, key: String, value: String) -> bool {
         return false;
     }
 
-    fn merge_entries(other: &mut Item) -> () {}
+    pub(crate) fn merge_entries(&mut self, other: &mut Item) -> () {}
 
-    fn get_entry(key: String) -> Option<String> {
+    pub(crate) fn get_entry(&self, key: String) -> Option<String> {
         return None;
     }
 
-    fn delete_entry(key: String) -> bool {
+    pub(crate) fn delete_entry(&mut self, key: String) -> bool {
         return false;
     }
 }
