@@ -34,10 +34,17 @@ pub mod app {
         }
 
         let db_filename: String = matches.opt_str("d").unwrap();
-        let w_obj = Wallet::new();
+        let mut w_obj: Wallet = Wallet::new();
         w_obj.load(&db_filename);
 
-        let action: Action = parse_action_argument(args);
+        let action: Action = parse_action_argument(args.clone());
+
+        match action {
+            Action::READ => execute_read_action(args, &mut w_obj),
+            Action::CREATE => execute_create_action(args, &mut w_obj),
+            Action::UPDATE => execute_update_action(args, &mut w_obj),
+            Action::DELETE => execute_delete_action(args, &mut w_obj),
+        }
     }
 
     fn opts_setup() -> Options {
