@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt;
 
+#[derive(Clone, Eq)]
 pub(crate) struct Item {
     identifier: String,
     entries: HashMap<String, String>,
@@ -51,7 +52,7 @@ impl Item {
     pub(crate) fn delete_entry(&mut self, key: String) -> bool {
         if self.entries.contains_key(&key) {
             self.entries.remove(&key);
-            return true;
+            return !self.entries.contains_key(&key);
         }
         return false;
     }
@@ -72,8 +73,8 @@ impl PartialEq<Self> for Item {
         self.identifier == self.identifier && self.entries == other.entries
     }
 }
-
-impl Eq for Item {}
+//
+// impl Eq for Item {}
 
 #[cfg(test)]
 mod tests {
@@ -82,16 +83,14 @@ mod tests {
 
     #[test]
     fn test_empty() {
-        let identifier = String::from("Empty_Test");
-        let item = Item::new(identifier);
+        let item = Item::new("Empty_Test".to_string());
         assert_eq!(item.size(), 0);
         assert!(item.empty());
     }
 
     #[test]
     fn test_entries_add() {
-        let identifier = String::from("Entries_Test");
-        let mut item = Item::new(identifier);
+        let mut item = Item::new("Entries_Test".to_string());
 
         let first_key = String::from("url");
         let first_val = String::from("https://www.google.com");
@@ -118,8 +117,7 @@ mod tests {
 
     #[test]
     fn test_entries_delete() {
-        let identifier = String::from("Test");
-        let mut item = Item::new(identifier);
+        let mut item = Item::new("Test".to_string());
 
         let first_key = String::from("url");
         let first_val = String::from("https://www.google.com");

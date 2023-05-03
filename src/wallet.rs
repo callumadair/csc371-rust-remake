@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fmt;
 use crate::category::Category;
 
+#[derive(Clone, Eq)]
 pub(crate) struct Wallet {
     categories: HashMap<String, Category>,
 }
@@ -54,5 +55,5 @@ impl PartialEq<Self> for Wallet {
         self.categories == other.categories
     }
 }
-
-impl Eq for Wallet {}
+//
+// impl Eq for Wallet {}
