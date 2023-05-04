@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::fmt;
+use serde::{Serialize, Deserialize};
 
-#[derive(Clone, Eq)]
+#[derive(Clone, Eq, Debug, Serialize, Deserialize)]
 pub(crate) struct Item {
     identifier: String,
     entries: HashMap<String, String>,
@@ -73,8 +74,7 @@ impl PartialEq<Self> for Item {
         self.identifier == self.identifier && self.entries == other.entries
     }
 }
-//
-// impl Eq for Item {}
+
 
 #[cfg(test)]
 mod tests {
