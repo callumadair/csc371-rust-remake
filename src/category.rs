@@ -67,7 +67,7 @@ impl Category {
         if self.items.contains_key(item_identifier) {
             return self.items.get(item_identifier).unwrap();
         }
-        panic!("Item not found");
+        panic!("Item {} not found in category {}", item_identifier, self.identifier);
     }
 
     pub(crate) fn delete_item(&mut self, item_identifier: &String) -> bool {
