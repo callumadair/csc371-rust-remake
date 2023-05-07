@@ -46,8 +46,8 @@ impl Item {
         }
     }
 
-    pub(crate) fn get_entry(&self, key: String) -> Option<String> {
-        return self.entries.get(&key).cloned();
+    pub(crate) fn get_entry(&mut self, key: String) -> &mut String {
+        return self.entries.get_mut(&key).unwrap();
     }
 
     pub(crate) fn delete_entry(&mut self, key: String) -> bool {

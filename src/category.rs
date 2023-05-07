@@ -33,13 +33,12 @@ impl Category {
         self.identifier = identifier;
     }
 
-    pub(crate) fn new_item(&mut self, item_identifier: &String) -> &Item {
+    pub(crate) fn new_item(&mut self, item_identifier: &String) -> &mut Item {
         if self.items.contains_key(item_identifier) {
-            return self.items.get(item_identifier).unwrap();
+            return self.items.get_mut(item_identifier).unwrap();
         }
-
         self.items.insert(item_identifier.clone(), Item::new(item_identifier.clone()));
-        return self.items.get(item_identifier).unwrap();
+        return self.items.get_mut(item_identifier).unwrap();
     }
 
     pub(crate) fn add_item(&mut self, item: Item) -> bool {
@@ -63,9 +62,9 @@ impl Category {
         }
     }
 
-    pub(crate) fn get_item(&self, item_identifier: &String) -> &Item {
+    pub(crate) fn get_item(&mut self, item_identifier: &String) -> &mut Item {
         if self.items.contains_key(item_identifier) {
-            return self.items.get(item_identifier).unwrap();
+            return self.items.get_mut(item_identifier).unwrap();
         }
         panic!("Item {} not found in category {}", item_identifier, self.identifier);
     }
