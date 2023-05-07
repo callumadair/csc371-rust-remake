@@ -76,10 +76,7 @@ impl Wallet {
 
             println!("Category: {}, contents: {}", cat_ident, category)
         }
-
-        // println!("JSON: {}", json);
-
-        return false;
+        return true;
     }
 
     pub(crate) fn save(&self, filename: &String) -> bool {
