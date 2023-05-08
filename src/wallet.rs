@@ -120,7 +120,7 @@ mod tests {
         assert!(wallet.add_category(first_category.clone()));
         assert_eq!(wallet.size(), 1);
         assert!(!wallet.empty());
-        assert_eq!(wallet.get_category(&first_cat_ident) == &first_category);
+        assert_eq!(wallet.get_category(&first_cat_ident), &first_category);
 
         let second_category = Category::new(first_cat_ident.clone());
         assert!(second_category.empty());
@@ -134,7 +134,7 @@ mod tests {
         assert!(wallet.add_category(third_category.clone()));
         assert_eq!(wallet.size(), 2);
         assert!(!wallet.empty());
-        assert_eq!(wallet.get_category(&third_cat_ident) == &third_category);
+        assert_eq!(wallet.get_category(&third_cat_ident), &third_category);
     }
 
     #[test]
@@ -147,7 +147,7 @@ mod tests {
         assert!(wallet.add_category(first_category.clone()));
         assert_eq!(wallet.size(), 1);
         assert!(!wallet.empty());
-        assert_eq!(wallet.get_category(&first_cat_ident) == &first_category);
+        assert_eq!(wallet.get_category(&first_cat_ident), &first_category);
         assert!(wallet.delete_category(&first_cat_ident));
         //add exception check here
         assert_eq!(wallet.size(), 0);
