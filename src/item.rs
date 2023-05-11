@@ -78,6 +78,8 @@ impl PartialEq<Self> for Item {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+    use std::path::Path;
     use std::string::String;
     use super::*;
 
@@ -136,5 +138,23 @@ mod tests {
         //Now delete the real entry and validate it is gone.
         assert!(item.delete_entry(first_key.clone()));
         assert_eq!(item.size(), 0);
+
+        #[test]
+        fn test_load_json_file() {
+            let file_path = String::from("./tests/testdatabasealt.json");
+            assert!(Path::new(&file_path).exists());
+
+            let data = String::from("{\"Bank Accounts\":{\"Starling\":{\"Account
+                  Number\":\"12345678\",\"Name\":\"Mr John Doe\",\"Sort
+                  Code\":\"12-34-56\"}},\"Websites\":{\"Facebook\":{
+                  \"password\":\"pass1234fb\",\"url\":\"https://
+                  www.facebook.com/
+                  \",\"username\":\"example@gmail.com\"},\"Google\":{
+                  \"password\":\"pass1234\",\"url\":\"https://www.google.com/
+                  \",\"username\":\"example@gmail.com\"},\"Twitter\":{
+                  \"password\":\"r43rfsffdsfdsf\",\"url\":\"https://
+                  www.twitter.com/\",\"username\":\"example@gmail.com\"}}}");
+            fs::write(&file_path, data).expect("Unable to write file");
+        }
     }
 }
