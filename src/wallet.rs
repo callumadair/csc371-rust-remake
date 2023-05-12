@@ -43,9 +43,9 @@ impl Wallet {
         return false;
     }
 
-    pub(crate) fn get_category(&mut self, category_identifier: &String) -> &mut Category {
+    pub(crate) fn get_category(&mut self, category_identifier: &String) -> Option<&mut Category> {
         if self.categories.contains_key(category_identifier) {
-            return self.categories.get_mut(category_identifier).unwrap();
+            return self.categories.get_mut(category_identifier);
         }
         panic!("Category {} does not exist", category_identifier);
     }
@@ -100,6 +100,7 @@ impl PartialEq<Self> for Wallet {
 
 #[cfg(test)]
 mod tests {
+    use std::{string::String, path::Path, fs};
     use super::*;
 
     #[test]
@@ -120,7 +121,7 @@ mod tests {
         assert!(wallet.add_category(first_category.clone()));
         assert_eq!(wallet.size(), 1);
         assert!(!wallet.empty());
-        assert_eq!(wallet.get_category(&first_cat_ident), &first_category);
+        assert_eq!(wallet.get_category(&first_cat_ident).unwrap(), &first_category);
 
         let second_category = Category::new(first_cat_ident.clone());
         assert!(second_category.empty());
@@ -134,7 +135,7 @@ mod tests {
         assert!(wallet.add_category(third_category.clone()));
         assert_eq!(wallet.size(), 2);
         assert!(!wallet.empty());
-        assert_eq!(wallet.get_category(&third_cat_ident), &third_category);
+        assert_eq!(wallet.get_category(&third_cat_ident).unwrap(), &third_category);
     }
 
     #[test]
@@ -147,9 +148,104 @@ mod tests {
         assert!(wallet.add_category(first_category.clone()));
         assert_eq!(wallet.size(), 1);
         assert!(!wallet.empty());
-        assert_eq!(wallet.get_category(&first_cat_ident), &first_category);
+        assert_eq!(wallet.get_category(&first_cat_ident).unwrap(), &first_category);
         assert!(wallet.delete_category(&first_cat_ident));
         //add exception check here
         assert_eq!(wallet.size(), 0);
+    }
+
+    #[test]
+    fn test_load_json_file() {
+        let file_path = String::from("./tests/testdatabasealt.json");
+        assert!(Path::new(&file_path).exists());
+
+        let data = String::from("{\"Bank Accounts\":{\"Starling\":{\"Account
+                  Number\":\"12345678\",\"Name\":\"Mr John Doe\",\"Sort
+                  Code\":\"12-34-56\"}},\"Websites\":{\"Facebook\":{
+                  \"password\":\"pass1234fb\",\"url\":\"https://
+                  www.facebook.com/
+                  \",\"username\":\"example@gmail.com\"},\"Google\":{
+                  \"password\":\"pass1234\",\"url\":\"https://www.google.com/
+                  \",\"username\":\"example@gmail.com\"},\"Twitter\":{
+                  \"password\":\"r43rfsffdsfdsf\",\"url\":\"https://
+                  www.twitter.com/\",\"username\":\"example@gmail.com\"}}}");
+        fs::write(&file_path, data).expect("Unable to write file");
+
+        let mut wallet = Wallet::new();
+        assert!(wallet.empty());
+        //do error checking here instead of boolean checks.
+        assert!(wallet.load(&file_path));
+        assert_eq!(wallet.size(), 2);
+
+        assert!(wallet.get_category(&String::from("Websites")).is_some());
+        assert_eq!(wallet.get_category(&String::from("Websites")).unwrap().size(), 3);
+
+        assert!(wallet.get_category(&String::from("Websites")).unwrap()
+            .get_item(&String::from("Google")).is_some());
+        assert_eq!(wallet.get_category(&String::from("Websites")).unwrap()
+                       .get_item(&String::from("Google")).unwrap().size(), 3);
+        assert_eq!(wallet.get_category(&String::from("Websites")).unwrap()
+                       .get_item(&String::from("Google")).unwrap()
+                       .get_entry(String::from("url")).unwrap(),
+                   String::from("https://www.google.com/"));
+        assert_eq!(wallet.get_category(&String::from("Websites")).unwrap()
+                       .get_item(&String::from("Google")).unwrap()
+                       .get_entry(String::from("username")).unwrap(),
+                   String::from("example@gmail.com"));
+        assert_eq!(wallet.get_category(&String::from("Websites")).unwrap()
+                       .get_item(&String::from("Google")).unwrap()
+                       .get_entry(String::from("password")).unwrap(),
+                   String::from("pass1234"));
+
+        assert!(wallet.get_category(&String::from("Websites")).unwrap()
+            .get_item(&String::from("Facebook")).is_some());
+        assert_eq!(wallet.get_category(&String::from("Websites")).unwrap()
+                       .get_item(&String::from("Facebook")).unwrap().size(), 3);
+        assert_eq!(wallet.get_category(&String::from("Websites")).unwrap()
+                       .get_item(&String::from("Facebook")).unwrap()
+                       .get_entry(String::from("url")).unwrap(),
+                   String::from("https://www.facebook.com/"));
+        assert_eq!(wallet.get_category(&String::from("Websites")).unwrap()
+                       .get_item(&String::from("Facebook")).unwrap()
+                       .get_entry(String::from("username")).unwrap(),
+                   String::from("example@gmail.com"));
+        assert_eq!(wallet.get_category(&String::from("Websites")).unwrap()
+                       .get_item(&String::from("Facebook")).unwrap()
+                       .get_entry(String::from("password")).unwrap(),
+                   String::from("pass1234fb"));
+
+        assert!(wallet.get_category(&String::from("Websites")).unwrap()
+            .get_item(&String::from("Twitter")).is_some());
+        assert_eq!(wallet.get_category(&String::from("Websites")).unwrap()
+                       .get_item(&String::from("Twitter")).unwrap().size(), 3);
+        assert_eq!(wallet.get_category(&String::from("Websites")).unwrap()
+                       .get_item(&String::from("Twitter")).unwrap()
+                       .get_entry(String::from("url")).unwrap(),
+                   String::from("https://www.twitter.com/"));
+        assert_eq!(wallet.get_category(&String::from("Websites")).unwrap()
+                       .get_item(&String::from("Twitter")).unwrap()
+                       .get_entry(String::from("username")).unwrap(),
+                   String::from("example@gmail.com"));
+        assert_eq!(wallet.get_category(&String::from("Websites")).unwrap()
+                       .get_item(&String::from("Twitter")).unwrap()
+                       .get_entry(String::from("password")).unwrap(),
+                   String::from("r43rfsffdsfdsf"));
+
+        assert!(wallet.get_category(&String::from("Bank Accounts")).is_some());
+        assert_eq!(wallet.get_category(&String::from("Bank Accounts")).unwrap().size(), 1);
+        assert!(wallet.get_category(&String::from("Bank Accounts")).unwrap()
+            .get_item(&String::from("Starling")).is_some());
+        assert_eq!(wallet.get_category(&String::from("Bank Accounts")).unwrap()
+                       .get_item(&String::from("Starling")).unwrap().size(), 3);
+        assert_eq!(wallet.get_category(&String::from("Bank Accounts")).unwrap()
+                       .get_item(&String::from("Starling")).unwrap()
+                       .get_entry(String::from("Name")).unwrap(),
+                   String::from("Mr John Doe"));
+        assert_eq!(wallet.get_category(&String::from("Bank Accounts")).unwrap()
+                       .get_item(&String::from("Starling")).unwrap()
+                       .get_entry(String::from("Account Number")).unwrap(), String::from("12345678"));
+        assert_eq!(wallet.get_category(&String::from("Bank Accounts")).unwrap()
+                       .get_item(&String::from("Starling")).unwrap()
+                       .get_entry(String::from("Sort Code")).unwrap(), String::from("12-34-56"));
     }
 }

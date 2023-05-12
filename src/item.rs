@@ -46,8 +46,8 @@ impl Item {
         }
     }
 
-    pub(crate) fn get_entry(&mut self, key: String) -> String {
-        return self.entries.get_mut(&key).unwrap().clone();
+    pub(crate) fn get_entry(&mut self, key: String) -> Option<String> {
+        return self.entries.get_mut(&key).cloned();
     }
 
     pub(crate) fn delete_entry(&mut self, key: String) -> bool {
@@ -78,9 +78,6 @@ impl PartialEq<Self> for Item {
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
-    use std::path::Path;
-    use std::string::String;
     use super::*;
 
     #[test]
@@ -100,7 +97,7 @@ mod tests {
         assert_eq!(item.add_entry(first_key.clone(), first_val.clone()), true);
         assert_eq!(item.size(), 1);
         assert_ne!(item.empty(), true);
-        assert_eq!(item.get_entry(String::from("url")), first_val);
+        assert_eq!(item.get_entry(String::from("url")).unwrap(), first_val);
 
         //The add another entry with the same key.
         assert_eq!(item.add_entry(first_key.clone(), first_val.clone()), false);
@@ -114,7 +111,7 @@ mod tests {
         assert!(item.add_entry(second_key.clone(), second_val.clone()));
         assert_eq!(item.size(), 2);
         assert_ne!(item.empty(), true);
-        assert_eq!(item.get_entry(second_key.clone()), second_val);
+        assert_eq!(item.get_entry(second_key.clone()).unwrap(), second_val);
     }
 
     #[test]
@@ -128,33 +125,15 @@ mod tests {
         assert!(item.add_entry(first_key.clone(), first_val.clone()));
         assert_eq!(item.size(), 1);
         assert_ne!(item.empty(), true);
-        assert_eq!(item.get_entry(first_key.clone()), first_val);
+        assert_eq!(item.get_entry(first_key.clone()).unwrap(), first_val);
 
         //Delete non-existent entry and validate nothing changed.
         assert_eq!(item.delete_entry(String::from("username")), false);
-        assert_eq!(item.get_entry(first_key.clone()), first_val);
+        assert_eq!(item.get_entry(first_key.clone()).unwrap(), first_val);
         assert_eq!(item.size(), 1);
 
         //Now delete the real entry and validate it is gone.
         assert!(item.delete_entry(first_key.clone()));
         assert_eq!(item.size(), 0);
-
-        #[test]
-        fn test_load_json_file() {
-            let file_path = String::from("./tests/testdatabasealt.json");
-            assert!(Path::new(&file_path).exists());
-
-            let data = String::from("{\"Bank Accounts\":{\"Starling\":{\"Account
-                  Number\":\"12345678\",\"Name\":\"Mr John Doe\",\"Sort
-                  Code\":\"12-34-56\"}},\"Websites\":{\"Facebook\":{
-                  \"password\":\"pass1234fb\",\"url\":\"https://
-                  www.facebook.com/
-                  \",\"username\":\"example@gmail.com\"},\"Google\":{
-                  \"password\":\"pass1234\",\"url\":\"https://www.google.com/
-                  \",\"username\":\"example@gmail.com\"},\"Twitter\":{
-                  \"password\":\"r43rfsffdsfdsf\",\"url\":\"https://
-                  www.twitter.com/\",\"username\":\"example@gmail.com\"}}}");
-            fs::write(&file_path, data).expect("Unable to write file");
-        }
     }
 }

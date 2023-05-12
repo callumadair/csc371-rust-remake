@@ -62,9 +62,9 @@ impl Category {
         }
     }
 
-    pub(crate) fn get_item(&mut self, item_identifier: &String) -> &mut Item {
+    pub(crate) fn get_item(&mut self, item_identifier: &String) -> Option<&mut Item> {
         if self.items.contains_key(item_identifier) {
-            return self.items.get_mut(item_identifier).unwrap();
+            return self.items.get_mut(item_identifier);
         }
         panic!("Item {} not found in category {}", item_identifier, self.identifier);
     }
@@ -116,7 +116,7 @@ mod tests {
         assert!(category.add_item(item.clone()));
         assert_eq!(category.size(), 1);
         assert!(!category.empty());
-        assert_eq!(category.get_item(&item_identifier), &item);
+        assert_eq!(category.get_item(&item_identifier).unwrap(), &item);
         assert!(!category.empty());
 
         //Now try to add a new item with the same identifier.
@@ -133,7 +133,7 @@ mod tests {
         assert!(category.add_item(item3.clone()));
         assert_eq!(category.size(), 2);
         assert!(!category.empty());
-        assert_eq!(category.get_item(&item_identifier2), &item3);
+        assert_eq!(category.get_item(&item_identifier2).unwrap(), &item3);
     }
 
     #[test]
@@ -147,13 +147,13 @@ mod tests {
         assert!(category.add_item(item.clone()));
         assert_eq!(category.size(), 1);
         assert!(!category.empty());
-        assert_eq!(category.get_item(&item_identifier), &item);
+        assert_eq!(category.get_item(&item_identifier).unwrap(), &item);
         assert!(!category.empty());
 
         //Now try to delete an item that doesn't exist.
         let item_identifier2 = "Test_Item2".to_string();
         assert!(!category.delete_item(&item_identifier2));
-        assert_eq!(category.get_item(&item_identifier), &item);
+        assert_eq!(category.get_item(&item_identifier).unwrap(), &item);
         assert_eq!(category.size(), 1);
         assert!(!category.empty());
 
