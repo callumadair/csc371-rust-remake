@@ -61,20 +61,18 @@ impl Wallet {
     pub(crate) fn load(&mut self, filename: &String) -> bool {
         let file_contents = fs::read_to_string(filename).unwrap();
         let wallet_values: Value = serde_json::from_str(&file_contents).unwrap();
+        dbg!(&wallet_values);
 
         for (cat_ident, category) in wallet_values.as_object().unwrap() {
-            let mut new_category = Category::new(cat_ident.clone());
+            let mut new_category = self.new_category(cat_ident);
 
             for (item_ident, item) in category.as_object().unwrap() {
                 let mut new_item = new_category.new_item(item_ident);
 
                 for (entry_ident, entry_val) in item.as_object().unwrap() {
                     new_item.add_entry(entry_ident.clone(), entry_val.to_string());
-                    println!("Entry: {}, contents: {}", entry_ident, entry_val);
                 }
             }
-
-            println!("Category: {}, contents: {}", cat_ident, category)
         }
         return true;
     }
@@ -159,16 +157,13 @@ mod tests {
         let file_path = String::from("./tests/testdatabasealt.json");
         assert!(Path::new(&file_path).exists());
 
-        let data = String::from("{\"Bank Accounts\":{\"Starling\":{\"Account
-                  Number\":\"12345678\",\"Name\":\"Mr John Doe\",\"Sort
-                  Code\":\"12-34-56\"}},\"Websites\":{\"Facebook\":{
-                  \"password\":\"pass1234fb\",\"url\":\"https://
-                  www.facebook.com/
-                  \",\"username\":\"example@gmail.com\"},\"Google\":{
-                  \"password\":\"pass1234\",\"url\":\"https://www.google.com/
-                  \",\"username\":\"example@gmail.com\"},\"Twitter\":{
-                  \"password\":\"r43rfsffdsfdsf\",\"url\":\"https://
-                  www.twitter.com/\",\"username\":\"example@gmail.com\"}}}");
+        let data = String::from("{\"Bank Accounts\":{\"Starling\":{\"Account Number\":\
+        \"12345678\",\"Name\":\"Mr John Doe\",\"Sort Code\":\"12-34-56\"}},\"Websites\":{\
+        \"Facebook\":{\"password\":\"pass1234fb\",\"url\":\"https://www.facebook.com/\",\
+        \"username\":\"example@gmail.com\"},\"Google\":{\"password\":\"pass1234\",\"url\":\
+        \"https://www.google.com/\",\"username\":\"example@gmail.com\"},\"Twitter\":{\"password\":\
+        \"r43rfsffdsfdsf\",\"url\":\"https://www.twitter.com/\",\"username\":\"example@gmail.com\"\
+        }}}");
         fs::write(&file_path, data).expect("Unable to write file");
 
         let mut wallet = Wallet::new();
