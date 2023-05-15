@@ -76,7 +76,9 @@ impl Wallet {
     }
 
     pub(crate) fn save(&self, filename: &String) -> bool {
-        let json_val = serde_json::to_string(&self).unwrap();
+        let mut json_val: String = String::new();
+
+        dbg!(&json_val);
         fs::write(filename, json_val).expect("Unable to write file");
         return true;
     }
@@ -97,36 +99,38 @@ impl PartialEq<Self> for Wallet {
 #[cfg(test)]
 mod tests {
     use std::{string::String, path::Path, fs};
+    use std::io::Write;
+    use crate::item::Item;
     use super::*;
 
     #[test]
     fn test_empty() {
-        let wallet = Wallet::new();
+        let wallet: Wallet = Wallet::new();
         assert_eq!(wallet.size(), 0);
         assert!(wallet.empty());
     }
 
     #[test]
     fn test_categories_add() {
-        let mut wallet = Wallet::new();
+        let mut wallet: Wallet = Wallet::new();
         assert!(wallet.empty());
 
-        let first_cat_ident = String::from("Test");
-        let first_category = Category::new(first_cat_ident.clone());
+        let first_cat_ident: String = String::from("Test");
+        let first_category: Category = Category::new(first_cat_ident.clone());
         assert!(wallet.empty());
         assert!(wallet.add_category(first_category.clone()));
         assert_eq!(wallet.size(), 1);
         assert!(!wallet.empty());
         assert_eq!(wallet.get_category(&first_cat_ident).unwrap(), &first_category);
 
-        let second_category = Category::new(first_cat_ident.clone());
+        let second_category: Category = Category::new(first_cat_ident.clone());
         assert!(second_category.empty());
         assert!(!wallet.add_category(second_category.clone()));
         assert_eq!(wallet.size(), 1);
         assert!(!wallet.empty());
 
-        let third_cat_ident = String::from("Test2");
-        let third_category = Category::new(third_cat_ident.clone());
+        let third_cat_ident: String = String::from("Test2");
+        let third_category: Category = Category::new(third_cat_ident.clone());
         assert!(third_category.empty());
         assert!(wallet.add_category(third_category.clone()));
         assert_eq!(wallet.size(), 2);
@@ -136,10 +140,10 @@ mod tests {
 
     #[test]
     fn test_categories_delete() {
-        let mut wallet = Wallet::new();
+        let mut wallet: Wallet = Wallet::new();
         assert!(wallet.empty());
-        let first_cat_ident = String::from("Test");
-        let first_category = Category::new(first_cat_ident.clone());
+        let first_cat_ident: String = String::from("Test");
+        let first_category: Category = Category::new(first_cat_ident.clone());
         assert!(wallet.empty());
         assert!(wallet.add_category(first_category.clone()));
         assert_eq!(wallet.size(), 1);
@@ -152,7 +156,7 @@ mod tests {
 
     #[test]
     fn test_load_json_file() {
-        let file_path = String::from("./tests/testdatabasealt.json");
+        let file_path = String::from("./tests/testload.json");
         assert!(Path::new(&file_path).exists());
 
         let data = String::from(r#"{
@@ -181,9 +185,15 @@ mod tests {
                     }
                 }
             }"#);
-        fs::write(&file_path, data).expect("Unable to write file");
 
-        let mut wallet = Wallet::new();
+        let mut file: fs::File = fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&file_path)
+            .expect("Unable to open file");
+        assert!(file.write(data.as_bytes()).is_ok());
+
+        let mut wallet: Wallet = Wallet::new();
         assert!(wallet.empty());
         //do error checking here instead of boolean checks.
         assert!(wallet.load(&file_path));
@@ -193,7 +203,7 @@ mod tests {
         assert!(wallet.get_category(&web).is_some());
         assert_eq!(wallet.get_category(&web).unwrap().size(), 3);
 
-        let google = String::from("Google");
+        let google: String = String::from("Google");
         assert!(wallet.get_category(&web).unwrap()
             .get_item(&google).is_some());
         assert_eq!(wallet.get_category(&web).unwrap()
@@ -267,5 +277,56 @@ mod tests {
         assert_eq!(wallet.get_category(&bank).unwrap()
                        .get_item(&starling).unwrap()
                        .get_entry(String::from("Sort Code")).unwrap(), String::from("12-34-56"));
+    }
+
+    #[test]
+    fn test_save_json_file() {
+        let file_path = String::from("./tests/testsave.json");
+        assert!(Path::new(&file_path).exists());
+        let mut file: fs::File = fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&file_path)
+            .expect("Unable to open file");
+        assert!(file.write_all("{}".as_bytes()).is_ok());
+
+        let mut wallet = Wallet::new();
+        assert!(wallet.empty());
+
+        let ident_1: String = String::from("ident_1");
+        let ident_2: String = String::from("ident_2");
+
+        let entry_key_1 = String::from("key1");
+        let entry_key_2 = String::from("key2");
+
+        let entry_value_1: String = String::from("value1");
+        let entry_value_2: String = String::from("value2");
+
+        let mut item_1: Item = Item::new(ident_1.clone());
+        let mut item_2: Item = Item::new(ident_2.clone());
+        item_1.add_entry(entry_key_1.clone(), entry_value_1.clone());
+        item_1.add_entry(entry_key_2.clone(), entry_value_2.clone());
+        item_2.add_entry(entry_key_1.clone(), entry_value_1.clone());
+
+        assert_eq!(item_1.size(), 2);
+        assert_eq!(item_2.size(), 1);
+
+        let mut cat_1: Category = Category::new(ident_1.clone());
+        let mut cat_2: Category = Category::new(ident_2.clone());
+        cat_1.add_item(item_1.clone());
+        cat_1.add_item(item_2.clone());
+        cat_2.add_item(item_1.clone());
+
+        assert_eq!(cat_1.size(), 2);
+        assert_eq!(cat_2.size(), 1);
+
+        wallet.add_category(cat_1);
+        wallet.add_category(cat_2);
+
+        assert_eq!(wallet.size(), 2);
+        assert!(wallet.save(&file_path));
+        let file_contents: String = fs::read_to_string(&file_path).expect("Unable to read file");
+        let expected_contents = r#"{"ident1":{"ident1":{"key1":"value1","key2":"value2"},"ident2":{"key1":"value1"}},"ident2":{"ident1":{"key1":"value1","key2":"value2"}}}"#;
+        assert_eq!(file_contents, expected_contents);
     }
 }

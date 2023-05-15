@@ -62,7 +62,7 @@ impl Item {
 impl fmt::Display for Item {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for entry in self.entries.iter() {
-            write!(f, "{}\n", serde_json::to_string(&entry).unwrap())?;
+            write!(f, "{}", serde_json::to_string(&entry).unwrap())?;
         }
 
         return write!(f, "{}", "");
@@ -82,17 +82,17 @@ mod tests {
 
     #[test]
     fn test_empty() {
-        let item = Item::new("Empty_Test".to_string());
+        let item: Item = Item::new("Empty_Test".to_string());
         assert_eq!(item.size(), 0);
         assert!(item.empty());
     }
 
     #[test]
     fn test_entries_add() {
-        let mut item = Item::new("Entries_Test".to_string());
+        let mut item: Item = Item::new("Entries_Test".to_string());
 
-        let first_key = String::from("url");
-        let first_val = String::from("https://www.google.com");
+        let first_key: String = String::from("url");
+        let first_val: String = String::from("https://www.google.com");
 
         assert_eq!(item.add_entry(first_key.clone(), first_val.clone()), true);
         assert_eq!(item.size(), 1);
@@ -105,8 +105,8 @@ mod tests {
         assert_ne!(item.empty(), true);
 
         //Now try with new key value pair.
-        let second_key = String::from("username");
-        let second_val = String::from("myusername");
+        let second_key: String = String::from("username");
+        let second_val: String = String::from("myusername");
 
         assert!(item.add_entry(second_key.clone(), second_val.clone()));
         assert_eq!(item.size(), 2);
@@ -116,10 +116,10 @@ mod tests {
 
     #[test]
     fn test_entries_delete() {
-        let mut item = Item::new("Test".to_string());
+        let mut item: Item = Item::new("Test".to_string());
 
-        let first_key = String::from("url");
-        let first_val = String::from("https://www.google.com");
+        let first_key: String = String::from("url");
+        let first_val: String = String::from("https://www.google.com");
 
         //Validate the details of the entry are correct
         assert!(item.add_entry(first_key.clone(), first_val.clone()));

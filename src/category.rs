@@ -81,7 +81,7 @@ impl Category {
 impl fmt::Display for Category {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for item in self.items.iter() {
-            write!(f, "{}\n", serde_json::to_string(&item).unwrap())?;
+            write!(f, "{}", serde_json::to_string(&item).unwrap())?;
         }
         return write!(f, "{}", "");
     }
@@ -100,18 +100,18 @@ mod tests {
 
     #[test]
     fn test_empty() {
-        let empty_category = Category::new("Empty_Test".to_string());
+        let empty_category: Category = Category::new("Empty_Test".to_string());
         assert_eq!(empty_category.size(), 0);
         assert!(empty_category.empty());
     }
 
     #[test]
     fn test_items_add() {
-        let mut category = Category::new("Test_Cat".to_string());
+        let mut category: Category = Category::new("Test_Cat".to_string());
         assert!(category.empty());
 
-        let item_identifier = "Test_Item".to_string();
-        let item = Item::new(item_identifier.clone());
+        let item_identifier: String = "Test_Item".to_string();
+        let item: Item = Item::new(item_identifier.clone());
         assert!(item.empty());
         assert!(category.add_item(item.clone()));
         assert_eq!(category.size(), 1);
@@ -120,15 +120,15 @@ mod tests {
         assert!(!category.empty());
 
         //Now try to add a new item with the same identifier.
-        let item2 = Item::new(item_identifier.clone());
+        let item2: Item = Item::new(item_identifier.clone());
         assert!(item2.empty());
         assert!(!category.add_item(item2.clone()));
         assert_eq!(category.size(), 1);
         assert!(!category.empty());
 
         //Now add another item with a different identifier.
-        let item_identifier2 = "Test_Item2".to_string();
-        let item3 = Item::new(item_identifier2.clone());
+        let item_identifier2: String = "Test_Item2".to_string();
+        let item3: Item = Item::new(item_identifier2.clone());
         assert!(item3.empty());
         assert!(category.add_item(item3.clone()));
         assert_eq!(category.size(), 2);
@@ -138,11 +138,11 @@ mod tests {
 
     #[test]
     fn test_items_delete() {
-        let mut category = Category::new("Test_Cat".to_string());
+        let mut category: Category = Category::new("Test_Cat".to_string());
         assert!(category.empty());
 
-        let item_identifier = "Test_Item".to_string();
-        let item = Item::new(item_identifier.clone());
+        let item_identifier: String = "Test_Item".to_string();
+        let item: Item = Item::new(item_identifier.clone());
         assert!(item.empty());
         assert!(category.add_item(item.clone()));
         assert_eq!(category.size(), 1);
@@ -151,7 +151,7 @@ mod tests {
         assert!(!category.empty());
 
         //Now try to delete an item that doesn't exist.
-        let item_identifier2 = "Test_Item2".to_string();
+        let item_identifier2: String = "Test_Item2".to_string();
         assert!(!category.delete_item(&item_identifier2));
         assert_eq!(category.get_item(&item_identifier).unwrap(), &item);
         assert_eq!(category.size(), 1);
