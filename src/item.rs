@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt;
-use serde::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize, Serializer};
+use serde::ser::SerializeStruct;
 
 #[derive(Clone, Eq, Debug, Serialize, Deserialize)]
 pub(crate) struct Item {
@@ -75,6 +76,14 @@ impl PartialEq<Self> for Item {
     }
 }
 
+// impl Serialize for Item {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+//         let mut state = serializer.serialize_struct("Item", 1)?;
+//         let key = self.get_ident().clone().as_str();
+//         state.serialize_field(key, &self.entries)?;
+//         state.end()
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
