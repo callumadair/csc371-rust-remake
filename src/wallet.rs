@@ -1,9 +1,9 @@
 use std::{collections, fmt, fs};
-use serde::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize, Serializer, ser::SerializeMap};
 use serde_json::Value;
 use crate::category::Category;
 
-#[derive(Clone, Eq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, Debug, Deserialize)]
 pub(crate) struct Wallet {
     categories: collections::HashMap<String, Category>,
 }
@@ -76,9 +76,8 @@ impl Wallet {
     }
 
     pub(crate) fn save(&self, filename: &String) -> bool {
-        let mut json_val: String = String::new();
+        let mut json_val: String = serde_json::to_string(&self).unwrap();
 
-        dbg!(&json_val);
         fs::write(filename, json_val).expect("Unable to write file");
         return true;
     }
@@ -93,6 +92,17 @@ impl fmt::Display for Wallet {
 impl PartialEq<Self> for Wallet {
     fn eq(&self, other: &Self) -> bool {
         self.categories == other.categories
+    }
+}
+
+impl Serialize for Wallet {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        let mut map: <S as Serializer>::SerializeMap = serializer.serialize_map(Some(self.categories.len()))?;
+
+        for (category_identifier, category_contents) in &self.categories {
+            map.serialize_entry(&category_identifier, &category_contents)?;
+        }
+        map.end()
     }
 }
 

@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::fmt;
-use serde::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize, Serializer, ser::SerializeMap};
 use crate::item::Item;
 
-#[derive(Clone, Eq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, Debug, Deserialize)]
 pub(crate) struct Category {
     identifier: String,
     items: HashMap<String, Item>,
@@ -90,6 +90,17 @@ impl fmt::Display for Category {
 impl PartialEq<Self> for Category {
     fn eq(&self, other: &Self) -> bool {
         self.items == other.items
+    }
+}
+
+impl Serialize for Category {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        let mut map: <S as Serializer>::SerializeMap = serializer.serialize_map(Some(self.items.len()))?;
+
+        for (item_identifier, item_contents) in &self.items {
+            map.serialize_entry(&item_identifier, &item_contents)?;
+        }
+        map.end()
     }
 }
 

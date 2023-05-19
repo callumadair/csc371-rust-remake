@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::fmt;
-use serde::{Serialize, Deserialize, Serializer};
-use serde::ser::SerializeStruct;
+use serde::{Serialize, Deserialize, Serializer, ser::SerializeMap};
 
-#[derive(Clone, Eq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, Debug, Deserialize)]
 pub(crate) struct Item {
+    #[serde(flatten)]
     identifier: String,
     entries: HashMap<String, String>,
 }
@@ -76,14 +76,16 @@ impl PartialEq<Self> for Item {
     }
 }
 
-// impl Serialize for Item {
-//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-//         let mut state = serializer.serialize_struct("Item", 1)?;
-//         let key = self.get_ident().clone().as_str();
-//         state.serialize_field(key, &self.entries)?;
-//         state.end()
-//     }
-// }
+
+impl Serialize for Item {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        let mut map:<S as Serializer>::SerializeMap = serializer.serialize_map(Some(self.entries.len()))?;
+        for (key, value) in &self.entries {
+            map.serialize_entry(&key, &value)?;
+        }
+        map.end()
+    }
+}
 
 #[cfg(test)]
 mod tests {
