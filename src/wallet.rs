@@ -306,11 +306,11 @@ mod tests {
         let ident_1: String = String::from("ident_1");
         let ident_2: String = String::from("ident_2");
 
-        let entry_key_1 = String::from("key1");
-        let entry_key_2 = String::from("key2");
+        let entry_key_1 = String::from("key_1");
+        let entry_key_2 = String::from("key_2");
 
-        let entry_value_1: String = String::from("value1");
-        let entry_value_2: String = String::from("value2");
+        let entry_value_1: String = String::from("value_1");
+        let entry_value_2: String = String::from("value_2");
 
         let mut item_1: Item = Item::new(ident_1.clone());
         let mut item_2: Item = Item::new(ident_2.clone());
@@ -336,7 +336,7 @@ mod tests {
         assert_eq!(wallet.size(), 2);
         assert!(wallet.save(&file_path));
         let file_contents: String = fs::read_to_string(&file_path).expect("Unable to read file");
-        let expected_contents = r#"{"ident1":{"ident1":{"key1":"value1","key2":"value2"},"ident2":{"key1":"value1"}},"ident2":{"ident1":{"key1":"value1","key2":"value2"}}}"#;
+        let expected_contents = r#"{"ident_1":{"ident_1":{"key_1":"value_1","key_2":"value_2"},"ident_2":{"key_1":"value_1"}},"ident_2":{"ident_1":{"key_1":"value_1","key_2":"value_2"}}}"#;
         assert_eq!(file_contents, expected_contents);
     }
 }
