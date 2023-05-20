@@ -120,8 +120,7 @@ pub mod app {
         };
     }
 
-
-    fn execute_read_action(args: Vec<String>, w_obj: &mut Wallet) -> Result<(), Error> {
+    pub(crate) fn execute_read_action(args: Vec<String>, w_obj: &mut Wallet) -> Result<(), Error> {
         return Ok(());
     }
 
@@ -133,10 +132,15 @@ pub mod app {
         return Ok(());
     }
 
+    fn process_category_update(w_obj: &mut Wallet, key_delimiter: &String, cat_input: &String, cur_cat_ident: &String) {}
+
+    fn process_item_update(key_delimiter: &String, cur_cat: &Category, item_input: &String, cur_item_ident: &String) {}
+
+    fn process_entry_update(args: Vec<String>, key_delimiter: &String, cur_cat: &Category, cur_item_ident: &String) {}
+
     fn execute_delete_action(args: Vec<String>, w_obj: &mut Wallet) -> Result<(), Error> {
         return Ok(());
     }
-
 
     fn get_wallet_json(w: &Wallet) -> String {
         return String::from(serde_json::to_string(w).unwrap());
@@ -153,12 +157,6 @@ pub mod app {
     fn get_entry_json(w: &Wallet, c: &String, i: &String, e: &String) -> String {
         return String::from("");
     }
-
-    fn process_entry_update(args: Vec<String>, key_delimiter: &String, cur_cat: &Category, cur_item_ident: &String) {}
-
-    fn process_item_update(key_delimiter: &String, cur_cat: &Category, item_input: &String, cur_item_ident: &String) {}
-
-    fn process_category_update(w_obj: &mut Wallet, key_delimiter: &String, cat_input: &String, cur_cat_ident: &String) {}
 }
 
 #[cfg(test)]
@@ -211,5 +209,18 @@ mod tests {
         let result = app::parse_action_argument(args_vec.clone());
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), app::Action::DELETE);
+    }
+
+    #[test]
+    fn test_read_action() {
+        let mut args_vec: Vec<String> = Vec::new();
+        args_vec.push(String::from("target/debug/csc371_remake"));
+        args_vec.push(String::from("--database"));
+        args_vec.push(String::from("./tests/testdatabasealt.json"));
+        args_vec.push(String::from("--action"));
+        args_vec.push(String::from("read"));
+
+        let mut w_obj = app::Wallet::new();
+        assert!(result.is_ok());
     }
 }
