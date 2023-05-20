@@ -18,7 +18,7 @@ pub mod app {
         print!("{}", opts.usage(&brief));
     }
 
-    pub fn run() {
+    pub fn run() -> Result<(), Error> {
         let options = opts_setup();
         let args: Vec<String> = std::env::args().collect();
         dbg!(&args);
@@ -33,7 +33,7 @@ pub mod app {
 
         if matches.opt_present("h") {
             print_usage(&program, options);
-            return;
+            return Ok(());
         }
 
         let db_filename: String = matches.opt_str("d").unwrap();
@@ -120,16 +120,26 @@ pub mod app {
         };
     }
 
-    fn execute_delete_action(args: Vec<String>, w_obj: &mut Wallet) {}
 
-    fn execute_update_action(args: Vec<String>, w_obj: &mut Wallet) {}
+    fn execute_read_action(args: Vec<String>, w_obj: &mut Wallet) -> Result<(), Error> {
+        return Ok(());
+    }
 
-    fn execute_read_action(args: Vec<String>, w_obj: &mut Wallet) {}
+    fn execute_create_action(args: Vec<String>, w_obj: &mut Wallet) -> Result<(), Error> {
+        return Ok(());
+    }
 
-    fn execute_create_action(args: Vec<String>, w_obj: &mut Wallet) {}
+    fn execute_update_action(args: Vec<String>, w_obj: &mut Wallet) -> Result<(), Error> {
+        return Ok(());
+    }
+
+    fn execute_delete_action(args: Vec<String>, w_obj: &mut Wallet) -> Result<(), Error> {
+        return Ok(());
+    }
+
 
     fn get_wallet_json(w: &Wallet) -> String {
-        return String::from("");
+        return String::from(serde_json::to_string(w).unwrap());
     }
 
     fn get_category_json(w: &Wallet, c: &String) -> String {
@@ -156,7 +166,6 @@ mod tests {
     use std::io::{Error, ErrorKind};
     use std::string::String;
     use crate::_371pass::app;
-    use crate::_371pass::app::Action;
 
     #[test]
     fn test_args_parsing() {
@@ -183,22 +192,24 @@ mod tests {
         args_vec.push(String::from("create"));
         let result = app::parse_action_argument(args_vec.clone());
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Action::CREATE);
+        assert_eq!(result.unwrap(), app::Action::CREATE);
 
         args_vec.pop();
         args_vec.push(String::from("read"));
         let result = app::parse_action_argument(args_vec.clone());
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Action::READ);
+        assert_eq!(result.unwrap(), app::Action::READ);
 
         args_vec.pop();
         args_vec.push(String::from("update"));
         let result = app::parse_action_argument(args_vec.clone());
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Action::UPDATE);
+        assert_eq!(result.unwrap(), app::Action::UPDATE);
 
         args_vec.pop();
         args_vec.push(String::from("delete"));
         let result = app::parse_action_argument(args_vec.clone());
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), app::Action::DELETE);
     }
 }

@@ -5,6 +5,8 @@ mod item;
 
 extern crate getopts;
 
-fn main() {
+use std::io::Error;
+
+fn main() -> Result<(), Error> {
     return _371pass::app::run();
 }
