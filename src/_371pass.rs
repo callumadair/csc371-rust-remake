@@ -1,11 +1,12 @@
 pub mod app {
+    use std::io::{Error, ErrorKind};
     use getopts::Options;
-    use crate::category::Category;
-    use crate::wallet::Wallet;
+    use crate::{category::Category, wallet::Wallet};
 
     const STUDENT_NUMBER: &str = "851784";
 
-    enum Action {
+    #[derive(Debug, PartialEq)]
+    pub(crate) enum Action {
         CREATE,
         READ,
         UPDATE,
@@ -20,12 +21,14 @@ pub mod app {
     pub fn run() {
         let options = opts_setup();
         let args: Vec<String> = std::env::args().collect();
-
+        dbg!(&args);
         let program = args[0].clone();
 
         let matches = match options.parse(&args[1..]) {
-            Ok(m) => { m }
-            Err(f) => { panic!("{}", f.to_string()) }
+            Ok(m) =>
+                { m }
+            Err(f) =>
+                { panic!("{}", f.to_string()) }
         };
 
         if matches.opt_present("h") {
@@ -37,17 +40,21 @@ pub mod app {
         let mut w_obj: Wallet = Wallet::new();
         w_obj.load(&db_filename);
 
-        let action: Action = parse_action_argument(args.clone());
+        let action: Action = parse_action_argument(args.clone()).unwrap();
 
         match action {
-            Action::READ => execute_read_action(args, &mut w_obj),
-            Action::CREATE => execute_create_action(args, &mut w_obj),
-            Action::UPDATE => execute_update_action(args, &mut w_obj),
-            Action::DELETE => execute_delete_action(args, &mut w_obj),
+            Action::READ =>
+                execute_read_action(args, &mut w_obj),
+            Action::CREATE =>
+                execute_create_action(args, &mut w_obj),
+            Action::UPDATE =>
+                execute_update_action(args, &mut w_obj),
+            Action::DELETE =>
+                execute_delete_action(args, &mut w_obj),
         }
     }
 
-    fn opts_setup() -> Options {
+    pub(crate) fn opts_setup() -> Options {
         let mut opts = Options::new();
 
         opts.optopt("d",
@@ -88,18 +95,29 @@ pub mod app {
         return opts;
     }
 
-    fn parse_action_argument(args: Vec<String>) -> Action {
+    pub(crate) fn parse_action_argument(args: Vec<String>) -> Result<Action, Error> {
+        let action_index = args
+            .iter()
+            .position(|r| r == "-a" || r == "--action")
+            .expect("Invalid action argument.");
+        let input: String = args[action_index + 1]
+            .clone()
+            .to_uppercase();
 
-        let action_index = args.iter().position(|r| r == "-a" || r == "--action");
-        let input: String = args[action_index.unwrap() + 1].clone().to_uppercase();
-
-        match input.as_str() {
-            "CREATE" => return Action::CREATE,
-            "READ" => return Action::READ,
-            "UPDATE" => return Action::UPDATE,
-            "DELETE" => return Action::DELETE,
-            _ => panic!("Invalid action argument: {}", input),
-        }
+        return match Some(input.as_str()) {
+            None =>
+                Err(Error::new(ErrorKind::InvalidInput, "No action argument provided.")),
+            Some("CREATE") =>
+                Ok(Action::CREATE),
+            Some("READ") =>
+                Ok(Action::READ),
+            Some("UPDATE") =>
+                Ok(Action::UPDATE),
+            Some("DELETE") =>
+                Ok(Action::DELETE),
+            Some(_) =>
+                Err(Error::new(ErrorKind::InvalidInput, "Invalid action argument.")),
+        };
     }
 
     fn execute_delete_action(args: Vec<String>, w_obj: &mut Wallet) {}
@@ -133,3 +151,54 @@ pub mod app {
     fn process_category_update(w_obj: &mut Wallet, key_delimiter: &String, cat_input: &String, cur_cat_ident: &String) {}
 }
 
+#[cfg(test)]
+mod tests {
+    use std::io::{Error, ErrorKind};
+    use std::string::String;
+    use crate::_371pass::app;
+    use crate::_371pass::app::Action;
+
+    #[test]
+    fn test_args_parsing() {
+        let mut args_vec: Vec<String> = Vec::new();
+        args_vec.push(String::from("target/debug/csc371_remake"));
+        args_vec.push(String::from("--action"));
+        args_vec.push(String::from("invalid"));
+
+        let opts = app::opts_setup();
+        let expected_error = Error::new(ErrorKind::InvalidInput, "Invalid action argument.");
+        let result = app::parse_action_argument(args_vec.clone());
+
+        assert!(result.is_err());
+        assert_eq!(result.as_ref()
+                       .unwrap_err()
+                       .kind(),
+                   expected_error.kind());
+        assert_eq!(result.as_ref()
+                       .unwrap_err()
+                       .to_string(),
+                   expected_error.to_string());
+
+        args_vec.pop();
+        args_vec.push(String::from("create"));
+        let result = app::parse_action_argument(args_vec.clone());
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Action::CREATE);
+
+        args_vec.pop();
+        args_vec.push(String::from("read"));
+        let result = app::parse_action_argument(args_vec.clone());
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Action::READ);
+
+        args_vec.pop();
+        args_vec.push(String::from("update"));
+        let result = app::parse_action_argument(args_vec.clone());
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Action::UPDATE);
+
+        args_vec.pop();
+        args_vec.push(String::from("delete"));
+        let result = app::parse_action_argument(args_vec.clone());
+    }
+}

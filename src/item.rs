@@ -1,19 +1,18 @@
-use std::collections::HashMap;
-use std::fmt;
+use std::{fmt, collections::BTreeMap};
 use serde::{Serialize, Deserialize, Serializer, ser::SerializeMap};
 
 #[derive(Clone, Eq, Debug, Deserialize)]
 pub(crate) struct Item {
     #[serde(flatten)]
     identifier: String,
-    entries: HashMap<String, String>,
+    entries: BTreeMap<String, String>,
 }
 
 impl Item {
     pub(crate) fn new(identifier: String) -> Item {
         Item {
             identifier,
-            entries: HashMap::new(),
+            entries: BTreeMap::new(),
         }
     }
 
@@ -79,7 +78,7 @@ impl PartialEq<Self> for Item {
 
 impl Serialize for Item {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-        let mut map:<S as Serializer>::SerializeMap = serializer.serialize_map(Some(self.entries.len()))?;
+        let mut map: <S as Serializer>::SerializeMap = serializer.serialize_map(Some(self.entries.len()))?;
         for (key, value) in &self.entries {
             map.serialize_entry(&key, &value)?;
         }

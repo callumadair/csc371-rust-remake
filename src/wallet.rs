@@ -1,17 +1,17 @@
-use std::{collections, fmt, fs};
+use std::{collections::BTreeMap, fmt, fs};
 use serde::{Serialize, Deserialize, Serializer, ser::SerializeMap};
 use serde_json::Value;
 use crate::category::Category;
 
 #[derive(Clone, Eq, Debug, Deserialize)]
 pub(crate) struct Wallet {
-    categories: collections::HashMap<String, Category>,
+    categories: BTreeMap<String, Category>,
 }
 
 impl Wallet {
     pub(crate) fn new() -> Wallet {
         Wallet {
-            categories: collections::HashMap::new(),
+            categories: BTreeMap::new(),
         }
     }
 
@@ -336,7 +336,7 @@ mod tests {
         assert_eq!(wallet.size(), 2);
         assert!(wallet.save(&file_path));
         let file_contents: String = fs::read_to_string(&file_path).expect("Unable to read file");
-        let expected_contents = r#"{"ident_1":{"ident_1":{"key_1":"value_1","key_2":"value_2"},"ident_2":{"key_1":"value_1"}},"ident_2":{"ident_1":{"key_1":"value_1","key_2":"value_2"}}}"#;
+        let expected_contents: &str = r#"{"ident_1":{"ident_1":{"key_1":"value_1","key_2":"value_2"},"ident_2":{"key_1":"value_1"}},"ident_2":{"ident_1":{"key_1":"value_1","key_2":"value_2"}}}"#;
         assert_eq!(file_contents, expected_contents);
     }
 }

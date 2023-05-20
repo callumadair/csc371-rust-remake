@@ -1,19 +1,18 @@
-use std::collections::HashMap;
-use std::fmt;
+use std::{fmt, collections::BTreeMap};
 use serde::{Serialize, Deserialize, Serializer, ser::SerializeMap};
 use crate::item::Item;
 
 #[derive(Clone, Eq, Debug, Deserialize)]
 pub(crate) struct Category {
     identifier: String,
-    items: HashMap<String, Item>,
+    items: BTreeMap<String, Item>,
 }
 
 impl Category {
     pub(crate) fn new(identifier: String) -> Category {
         Category {
             identifier,
-            items: HashMap::new(),
+            items: BTreeMap::new(),
         }
     }
 
