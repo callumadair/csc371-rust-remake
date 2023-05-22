@@ -108,8 +108,7 @@ impl Serialize for Wallet {
 
 #[cfg(test)]
 mod tests {
-    use std::{string::String, path::Path, fs};
-    use std::io::Write;
+    use std::{path::Path, fs, io::Write};
     use crate::item::Item;
     use super::*;
 

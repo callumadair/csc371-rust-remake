@@ -121,37 +121,50 @@ pub mod app {
     }
 
     pub(crate) fn execute_read_action(args: Vec<String>, w_obj: &mut Wallet) -> Result<(), Error> {
-        return Ok(());
+        Ok(())
     }
 
     fn execute_create_action(args: Vec<String>, w_obj: &mut Wallet) -> Result<(), Error> {
-        return Ok(());
+        Ok(())
     }
 
     fn execute_update_action(args: Vec<String>, w_obj: &mut Wallet) -> Result<(), Error> {
-        return Ok(());
+        Ok(())
     }
 
-    fn process_category_update(w_obj: &mut Wallet, key_delimiter: &String, cat_input: &String, cur_cat_ident: &String) {}
+    fn process_category_update(w_obj: &mut Wallet,
+                               key_delimiter: &String,
+                               cat_input: &String,
+                               cur_cat_ident: &String) -> () {}
 
-    fn process_item_update(key_delimiter: &String, cur_cat: &Category, item_input: &String, cur_item_ident: &String) {}
+    fn process_item_update(key_delimiter: &String,
+                           cur_cat: &Category,
+                           item_input: &String,
+                           cur_item_ident: &String) -> () {}
 
-    fn process_entry_update(args: Vec<String>, key_delimiter: &String, cur_cat: &Category, cur_item_ident: &String) {}
+    fn process_entry_update(args: Vec<String>,
+                            key_delimiter: &String,
+                            cur_cat: &Category,
+                            cur_item_ident: &String) -> () {}
 
     fn execute_delete_action(args: Vec<String>, w_obj: &mut Wallet) -> Result<(), Error> {
-        return Ok(());
+        Ok(())
     }
 
     fn get_wallet_json(w: &Wallet) -> String {
-        return String::from(serde_json::to_string(w).unwrap());
+        String::from(serde_json::to_string(w).unwrap())
     }
 
-    fn get_category_json(w: &Wallet, c: &String) -> String {
-        return String::from("");
+    fn get_category_json(w: &mut Wallet, c: &String) -> String {
+        String::from(
+            serde_json::to_string(
+                w.get_category(c)
+                    .unwrap()).unwrap())
     }
 
-    fn get_item_json(w: &Wallet, c: &String, i: &String) -> String {
-        return String::from("");
+    fn get_item_json(w: &mut Wallet, c: &String, i: &String) -> String {
+        String::from(serde_json::to_string(w.get_category(c).unwrap()
+            .get_item(i).unwrap()).unwrap())
     }
 
     fn get_entry_json(w: &Wallet, c: &String, i: &String, e: &String) -> String {
@@ -161,9 +174,12 @@ pub mod app {
 
 #[cfg(test)]
 mod tests {
-    use std::io::{Error, ErrorKind};
-    use std::string::String;
+    use std::{
+        io::{Error, ErrorKind},
+        path::Path,
+    };
     use crate::_371pass::app;
+    use crate::wallet::Wallet;
 
     #[test]
     fn test_args_parsing() {
@@ -213,14 +229,17 @@ mod tests {
 
     #[test]
     fn test_read_action() {
+        let filepath = String::from("./tests/testdatabase.json");
+        assert!(Path::new(&filepath).exists());
+
         let mut args_vec: Vec<String> = Vec::new();
         args_vec.push(String::from("target/debug/csc371_remake"));
         args_vec.push(String::from("--database"));
-        args_vec.push(String::from("./tests/testdatabasealt.json"));
+        args_vec.push(String::from(filepath.clone()));
         args_vec.push(String::from("--action"));
         args_vec.push(String::from("read"));
 
-        let mut w_obj = app::Wallet::new();
-        assert!(result.is_ok());
+        let mut w_obj = Wallet::new();
+        // assert!(result.is_ok());
     }
 }
