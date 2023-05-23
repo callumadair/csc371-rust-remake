@@ -1,5 +1,7 @@
 pub mod app {
-    use std::io::{Error, ErrorKind};
+    use std::{env::Args,
+              io::{Error, ErrorKind},
+    };
     use getopts::Options;
     use crate::{category::Category, wallet::Wallet};
 
@@ -18,9 +20,8 @@ pub mod app {
         print!("{}", opts.usage(&brief));
     }
 
-    pub fn run() -> Result<(), Error> {
+    pub fn run(args: Vec<String>) -> Result<(), Error> {
         let options = opts_setup();
-        let args: Vec<String> = std::env::args().collect();
         dbg!(&args);
         let program = args[0].clone();
 
@@ -177,9 +178,13 @@ mod tests {
     use std::{
         io::{Error, ErrorKind},
         path::Path,
+        fs,
+        io::Write,
     };
-    use crate::_371pass::app;
-    use crate::wallet::Wallet;
+    use crate::{
+        _371pass::app,
+        wallet::Wallet,
+    };
 
     #[test]
     fn test_args_parsing() {
@@ -229,17 +234,48 @@ mod tests {
 
     #[test]
     fn test_read_action() {
-        let filepath = String::from("./tests/testdatabase.json");
-        assert!(Path::new(&filepath).exists());
+        let file_path: String = String::from("./tests/testdatabase.json");
+        assert!(Path::new(&file_path).exists());
+        let data = String::from(r#"{
+            "Bank Accounts":{
+                "Starling":{
+                    "Account Number":"12345678",
+                    "Name":"Mr John Doe",
+                    "Sort Code":"12-34-56"
+                }
+            },
+            "Websites":{
+                "Facebook":{
+                    "password":"pass1234fb",
+                    "url":"https://www.facebook.com/",
+                    "username":"example@gmail.com"
+                    },
+                "Google":{
+                    "password":"pass1234",
+                    "url":"https://www.google.com/",
+                    "username":"example@gmail.com"
+                },
+                "Twitter":{
+                    "password":"r43rfsffdsfdsf",
+                    "url":"https://www.twitter.com/",
+                    "username":"example@gmail.com"
+                    }
+                }
+            }"#);
+        let mut file: fs::File = fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&file_path)
+            .expect("Unable to open file");
+        assert!(file.write(data.as_bytes()).is_ok());
 
         let mut args_vec: Vec<String> = Vec::new();
         args_vec.push(String::from("target/debug/csc371_remake"));
         args_vec.push(String::from("--database"));
-        args_vec.push(String::from(filepath.clone()));
+        args_vec.push(String::from(file_path.clone()));
         args_vec.push(String::from("--action"));
         args_vec.push(String::from("read"));
 
-        let mut w_obj = Wallet::new();
-        // assert!(result.is_ok());
+        app::run(args_vec.clone()).expect("Unable to run app.");
     }
 }

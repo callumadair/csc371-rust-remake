@@ -8,5 +8,6 @@ extern crate getopts;
 use std::io::Error;
 
 fn main() -> Result<(), Error> {
-    return _371pass::app::run();
+    let args: Vec<String> = std::env::args().collect();
+    return _371pass::app::run(args);
 }

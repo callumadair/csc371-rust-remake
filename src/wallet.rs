@@ -168,7 +168,7 @@ mod tests {
         let file_path = String::from("./tests/testload.json");
         assert!(Path::new(&file_path).exists());
 
-        let data = String::from(r#"{
+        let data: String = String::from(r#"{
             "Bank Accounts":{
                 "Starling":{
                     "Account Number":"12345678",
@@ -290,7 +290,7 @@ mod tests {
 
     #[test]
     fn test_save_json_file() {
-        let file_path = String::from("./tests/testsave.json");
+        let file_path: String = String::from("./tests/testsave.json");
         assert!(Path::new(&file_path).exists());
         let mut file: fs::File = fs::OpenOptions::new()
             .write(true)
