@@ -3,10 +3,10 @@ mod wallet;
 mod category;
 mod item;
 
-extern crate getopts;
-
 use std::io::Error;
+use clap::Parser;
+use crate::_371pass::app;
 
 fn main() -> Result<(), Error> {
-    return _371pass::app::run();
+    return app::run(app::Args::parse());
 }

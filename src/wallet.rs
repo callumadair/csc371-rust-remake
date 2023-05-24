@@ -76,8 +76,7 @@ impl Wallet {
     }
 
     pub(crate) fn save(&self, filename: &String) -> bool {
-        let mut json_val: String = serde_json::to_string(&self).unwrap();
-
+        let json_val: String = serde_json::to_string(&self).unwrap();
         fs::write(filename, json_val).expect("Unable to write file");
         return true;
     }

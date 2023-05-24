@@ -18,14 +18,14 @@ pub mod app {
     version,
     about = "A remake of the Department of Computer Science at Swansea University's CSC371 Module Assignment written in Rust",
     long_about = None)]
-    pub(crate) struct Args {
+    pub struct Args {
         //Path of the database file
         #[arg(short, long)]
         pub(crate) database: String,
 
         //Action to be performed
         #[arg(short, long)]
-        pub(crate) action: String,
+        pub(crate) action: Option<String>,
 
         //Name of the category if present
         #[arg(short, long)]
@@ -40,8 +40,7 @@ pub mod app {
         pub(crate) entry: Option<String>,
     }
 
-    pub fn run() -> Result<(), Error> {
-        let args: Args = Args::parse();
+    pub fn run(args: Args) -> Result<(), Error> {
         let db_filename = args.database.clone();
         let mut w_obj: Wallet = Wallet::new();
         w_obj.load(&db_filename);
@@ -61,7 +60,7 @@ pub mod app {
     }
 
     pub(crate) fn parse_action_argument(args: Args) -> Result<Action, Error> {
-        let action: String = args.action.to_uppercase();
+        let action: String = args.action.unwrap().to_uppercase();
 
         return match Some(action.as_str()) {
             None =>
@@ -80,6 +79,8 @@ pub mod app {
     }
 
     pub(crate) fn execute_read_action(args: Args, w_obj: &mut Wallet) -> Result<(), Error> {
+        if args.category.is_some() { }
+
         Ok(())
     }
 
@@ -148,7 +149,7 @@ mod tests {
     fn test_args_parsing() {
         let mut args = app::Args {
             database: String::from("test"),
-            action: String::from("invalid"),
+            action: Some(String::from("invalid")),
             category: None,
             item: None,
             entry: None,
@@ -167,75 +168,74 @@ mod tests {
                        .to_string(),
                    expected_error.to_string());
 
-        args.action = String::from("create");
+        args.action = Some(String::from("create"));
         let result = app::parse_action_argument(args.clone());
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), app::Action::CREATE);
 
-        args.action = String::from("read");
+        args.action = Some(String::from("read"));
         let result = app::parse_action_argument(args.clone());
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), app::Action::READ);
 
-        args.action = String::from("update");
+        args.action = Some(String::from("update"));
         let result = app::parse_action_argument(args.clone());
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), app::Action::UPDATE);
 
-        args.action = String::from("delete");
+        args.action = Some(String::from("delete"));
         let result = app::parse_action_argument(args.clone());
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), app::Action::DELETE);
     }
 
-    // #[test]
-    // fn test_read_action() {
-    //     let file_path: String = String::from("./tests/testdatabase.json");
-    //     assert!(Path::new(&file_path).exists());
-    //     let data = String::from(r#"{
-    //         "Bank Accounts":{
-    //             "Starling":{
-    //                 "Account Number":"12345678",
-    //                 "Name":"Mr John Doe",
-    //                 "Sort Code":"12-34-56"
-    //             }
-    //         },
-    //         "Websites":{
-    //             "Facebook":{
-    //                 "password":"pass1234fb",
-    //                 "url":"https://www.facebook.com/",
-    //                 "username":"example@gmail.com"
-    //                 },
-    //             "Google":{
-    //                 "password":"pass1234",
-    //                 "url":"https://www.google.com/",
-    //                 "username":"example@gmail.com"
-    //             },
-    //             "Twitter":{
-    //                 "password":"r43rfsffdsfdsf",
-    //                 "url":"https://www.twitter.com/",
-    //                 "username":"example@gmail.com"
-    //                 }
-    //             }
-    //         }"#);
-    //     let mut file: fs::File = fs::OpenOptions::new()
-    //         .write(true)
-    //         .truncate(true)
-    //         .open(&file_path)
-    //         .expect("Unable to open file");
-    //     assert!(file.write(data.as_bytes()).is_ok());
-    //
-    //     let mut args_vec: Vec<String> = Vec::new();
-    //     args_vec.push(String::from("target/debug/csc371_remake"));
-    //     args_vec.push(String::from("--database"));
-    //     args_vec.push(String::from(file_path.clone()));
-    //     args_vec.push(String::from("--action"));
-    //     args_vec.push(String::from("read"));
-    //
-    //     // app::run(args_vec.clone()).expect("Unable to run app.");
-    //
-    //     todo!("Finish test to check output of the program against the expected output.");
-    //
-    //     // TODO: Check output of the program against the expected output.
-    // }
+    #[test]
+    fn test_read_action() {
+        let file_path: String = String::from("./tests/testdatabase.json");
+        assert!(Path::new(&file_path).exists());
+        let data = String::from(r#"{
+            "Bank Accounts":{
+                "Starling":{
+                    "Account Number":"12345678",
+                    "Name":"Mr John Doe",
+                    "Sort Code":"12-34-56"
+                }
+            },
+            "Websites":{
+                "Facebook":{
+                    "password":"pass1234fb",
+                    "url":"https://www.facebook.com/",
+                    "username":"example@gmail.com"
+                    },
+                "Google":{
+                    "password":"pass1234",
+                    "url":"https://www.google.com/",
+                    "username":"example@gmail.com"
+                },
+                "Twitter":{
+                    "password":"r43rfsffdsfdsf",
+                    "url":"https://www.twitter.com/",
+                    "username":"example@gmail.com"
+                    }
+                }
+            }"#);
+        let mut file: fs::File = fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&file_path)
+            .expect("Unable to open file");
+        assert!(file.write(data.as_bytes()).is_ok());
+
+        let args = app::Args {
+            database: String::from(file_path.clone()),
+            action: Some(String::from("read")),
+            category: None,
+            item: None,
+            entry: None,
+        };
+
+        app::run(args).expect("Unable to run app.");
+
+        todo!("Finish test to check output of the program against the expected output.");
+    }
 }
