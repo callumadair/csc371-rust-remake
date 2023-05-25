@@ -19,23 +19,23 @@ pub mod app {
     about = "A remake of the Department of Computer Science at Swansea University's CSC371 Module Assignment written in Rust",
     long_about = None)]
     pub struct Args {
-        //Path of the database file
+        /// Path of the database file
         #[arg(short, long)]
         pub(crate) database: String,
 
-        //Action to be performed
+        /// Action to be performed
         #[arg(short, long)]
         pub(crate) action: Option<String>,
 
-        //Name of the category if present
+        /// Name of the category if present
         #[arg(short, long)]
         pub(crate) category: Option<String>,
 
-        //Name of the item if present
+        /// Name of the item if present
         #[arg(short, long)]
         pub(crate) item: Option<String>,
 
-        //Name of the entry if present
+        /// Name of the entry if present
         #[arg(short, long)]
         pub(crate) entry: Option<String>,
     }
@@ -79,8 +79,28 @@ pub mod app {
     }
 
     pub(crate) fn execute_read_action(args: Args, w_obj: &mut Wallet) -> Result<(), Error> {
-        if args.category.is_some() { }
+        if args.category.is_none() && (args.item.is_some() || args.entry.is_some()) {
+            return Err(Error::new(ErrorKind::InvalidInput, "No category argument provided."));
+        }
 
+        if args.category.is_none() {
+            println!("{}", get_wallet_json(w_obj));
+            return Ok(());
+        }
+
+        if args.item.is_none() && args.entry.is_some() {
+            return Err(Error::new(ErrorKind::InvalidInput, "No item argument provided."));
+        } else if args.item.is_none() {
+            println!("{}", get_category_json(w_obj, &args.category.unwrap()));
+            return Ok(());
+        }
+
+        if args.entry.is_none() {
+            println!("{}", get_item_json(w_obj, &args.category.unwrap(), &args.item.unwrap()));
+            return Ok(());
+        }
+
+        println!("{}", get_entry_json(w_obj, &args.category.unwrap(), &args.item.unwrap(), &args.entry.unwrap()));
         Ok(())
     }
 
