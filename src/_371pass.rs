@@ -79,29 +79,37 @@ pub mod app {
     }
 
     pub(crate) fn execute_read_action(args: Args, w_obj: &mut Wallet) -> Result<(), Error> {
+        let result = generate_wallet_string(args, w_obj).unwrap();
+        println!("{:?}", result);
+        Ok(())
+    }
+
+    pub(crate) fn generate_wallet_string(args: Args, w_obj: &mut Wallet) -> Result<String, Error> {
         if args.category.is_none() && (args.item.is_some() || args.entry.is_some()) {
             return Err(Error::new(ErrorKind::InvalidInput, "No category argument provided."));
         }
 
         if args.category.is_none() {
-            println!("{}", get_wallet_json(w_obj));
-            return Ok(());
+            return Ok(get_wallet_json(w_obj));
         }
 
         if args.item.is_none() && args.entry.is_some() {
             return Err(Error::new(ErrorKind::InvalidInput, "No item argument provided."));
         } else if args.item.is_none() {
-            println!("{}", get_category_json(w_obj, &args.category.unwrap()));
-            return Ok(());
+            return Ok(get_category_json(w_obj,
+                                        &args.category.unwrap()));
         }
 
         if args.entry.is_none() {
-            println!("{}", get_item_json(w_obj, &args.category.unwrap(), &args.item.unwrap()));
-            return Ok(());
+            return Ok(get_item_json(w_obj,
+                                    &args.category.unwrap(),
+                                    &args.item.unwrap()));
         }
 
-        println!("{}", get_entry_json(w_obj, &args.category.unwrap(), &args.item.unwrap(), &args.entry.unwrap()));
-        Ok(())
+        return Ok(get_entry_json(w_obj,
+                                 &args.category.unwrap(),
+                                 &args.item.unwrap(),
+                                 &args.entry.unwrap()));
     }
 
     fn execute_create_action(args: Args, w_obj: &mut Wallet) -> Result<(), Error> {
@@ -213,32 +221,7 @@ mod tests {
     fn test_read_action() {
         let file_path: String = String::from("./tests/testdatabase.json");
         assert!(Path::new(&file_path).exists());
-        let data = String::from(r#"{
-            "Bank Accounts":{
-                "Starling":{
-                    "Account Number":"12345678",
-                    "Name":"Mr John Doe",
-                    "Sort Code":"12-34-56"
-                }
-            },
-            "Websites":{
-                "Facebook":{
-                    "password":"pass1234fb",
-                    "url":"https://www.facebook.com/",
-                    "username":"example@gmail.com"
-                    },
-                "Google":{
-                    "password":"pass1234",
-                    "url":"https://www.google.com/",
-                    "username":"example@gmail.com"
-                },
-                "Twitter":{
-                    "password":"r43rfsffdsfdsf",
-                    "url":"https://www.twitter.com/",
-                    "username":"example@gmail.com"
-                    }
-                }
-            }"#);
+        let data = String::from(r#"{"Bank Accounts":{"Starling":{"Account Number":"12345678","Name":"Mr John Doe","Sort Code":"12-34-56"}},"Websites":{"Facebook":{"password":"pass1234fb","url":"https://www.facebook.com/","username":"example@gmail.com"},"Google":{"password":"pass1234","url":"https://www.google.com/","username":"example@gmail.com"},"Twitter":{"password":"r43rfsffdsfdsf","url":"https://www.twitter.com/","username":"example@gmail.com"}}}"#);
         let mut file: fs::File = fs::OpenOptions::new()
             .write(true)
             .truncate(true)
@@ -254,8 +237,9 @@ mod tests {
             entry: None,
         };
 
-        app::run(args).expect("Unable to run app.");
-
-        todo!("Finish test to check output of the program against the expected output.");
+        // app::run(args).expect("Unable to run app.");
+        let mut wallet = Wallet::new();
+        wallet.load(&file_path);
+        assert_eq!(data, app::generate_wallet_string(args, &mut wallet).unwrap());
     }
 }
