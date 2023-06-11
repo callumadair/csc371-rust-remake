@@ -175,6 +175,33 @@ pub mod app {
                             cur_item_ident: &String) -> () {}
 
     fn execute_delete_action(args: Args, w_obj: &mut Wallet) -> Result<(), Error> {
+        if args.category.is_none() {
+            return Err(Error::new(ErrorKind::InvalidInput, "No category argument provided."));
+        }
+
+        let cat_str = args.category.unwrap();
+
+        if args.item.is_none() && args.entry.is_some() {
+            return Err(Error::new(ErrorKind::InvalidInput, "No item argument provided."));
+        }
+
+        if args.item.is_none() {
+            w_obj.delete_category(&cat_str);
+            return Ok(());
+        }
+
+        let item_str = args.item.unwrap();
+
+        if args.entry.is_none() {
+            w_obj.get_category(&cat_str).unwrap()
+                .delete_item(&item_str);
+            return Ok(());
+        }
+
+        w_obj.get_category(&cat_str).unwrap()
+            .get_item(&item_str).unwrap()
+            .delete_entry(args.entry.unwrap());
+
         Ok(())
     }
 
