@@ -1,7 +1,7 @@
 pub mod app {
     use std::io::{Error, ErrorKind};
     use clap::Parser;
-    use crate::{category::Category, wallet::Wallet};
+    use crate::{wallet::Wallet, category::Category, item::Item};
 
     const STUDENT_NUMBER: &str = "851784";
 
@@ -78,6 +78,48 @@ pub mod app {
         };
     }
 
+    fn execute_create_action(args: Args, w_obj: &mut Wallet) -> Result<(), Error> {
+        if args.category.is_none() && (args.item.is_some() || args.entry.is_some()) {
+            return Err(Error::new(ErrorKind::InvalidInput, "No category argument provided."));
+        } else if args.category.is_none() {
+            return Err(Error::new(ErrorKind::InvalidInput, "Error: missing category, item or entry argument(s)."));
+        }
+
+        let new_category: &mut Category = w_obj.new_category(&args.category.unwrap());
+
+        if args.item.is_none() && args.entry.is_some() {
+            return Err(Error::new(ErrorKind::InvalidInput, "No item argument provided."));
+        } else if args.item.is_none() {
+            return Ok(());
+        }
+
+        let new_item: &mut Item = new_category.new_item(&args.item.unwrap());
+
+        if args.entry.is_none() {
+            return Ok(());
+        }
+
+        let entry_input: String = args.entry.unwrap();
+        let entry_delimiter: String = String::from(",");
+
+        if entry_input.contains(&entry_delimiter) {
+            let entry_identifier: String = entry_input
+                .split(&entry_delimiter)
+                .collect::<Vec<&str>>()[0]
+                .to_string();
+            let entry_value: String = entry_input
+                .split(&entry_delimiter)
+                .collect::<Vec<&str>>()[1]
+                .to_string();
+
+            new_item.add_entry(entry_identifier, entry_value);
+        } else {
+            new_item.add_entry(entry_input, String::from(""));
+        }
+
+        Ok(())
+    }
+
     pub(crate) fn execute_read_action(args: Args, w_obj: &mut Wallet) -> Result<(), Error> {
         let result = generate_wallet_string(args, w_obj).unwrap();
         println!("{:?}", result);
@@ -112,9 +154,6 @@ pub mod app {
                                  &args.entry.unwrap()));
     }
 
-    fn execute_create_action(args: Args, w_obj: &mut Wallet) -> Result<(), Error> {
-        Ok(())
-    }
 
     fn execute_update_action(args: Args, w_obj: &mut Wallet) -> Result<(), Error> {
         Ok(())
