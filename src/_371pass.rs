@@ -1,6 +1,6 @@
 pub mod app {
     use std::io::{Error, ErrorKind};
-    use clap::Parser;
+    use clap::{arg, Parser};
     use crate::{wallet::Wallet, category::Category, item::Item};
 
     const STUDENT_NUMBER: &str = "851784";
@@ -156,23 +156,116 @@ pub mod app {
 
 
     fn execute_update_action(args: Args, w_obj: &mut Wallet) -> Result<(), Error> {
+        if args.category.is_none() && args.item.is_none() && args.entry.is_none() {
+            return Err(Error::new(ErrorKind::InvalidInput, "No category, item or entry argument provided."));
+        }
+
+        if args.category.is_none() && (args.item.is_some() || args.entry.is_some()) {
+            return Err(Error::new(ErrorKind::InvalidInput, "Error: missing category argument(s)."));
+        }
+
+        let key_delimiter: String = String::from(":");
+        let cat_input: String = args.clone().category.unwrap();
+
+        let cur_cat_ident: String = if cat_input.contains(",") {
+            cat_input
+                .split(&key_delimiter)
+                .collect::<Vec<&str>>()[0]
+                .to_string()
+        } else { cat_input.clone() };
+
+        if args.item.is_none() && args.entry.is_some() {
+            return Err(Error::new(ErrorKind::InvalidInput, "No item argument provided."));
+        }
+
+        let cur_cat: &mut Category = w_obj.get_category(&cur_cat_ident).unwrap();
+        let item_input: String = args.clone().item.unwrap();
+        let cur_item_ident: String = if item_input.contains(&key_delimiter) {
+            item_input
+                .split(&key_delimiter)
+                .collect::<Vec<&str>>()[0]
+                .to_string()
+        } else { item_input.clone() };
+
+        if args.entry.is_some() { process_entry_update(&args, &key_delimiter, cur_cat, &cur_item_ident).expect("TODO: panic message"); }
+
+        if args.item.is_some() { process_item_update(&key_delimiter, cur_cat, &item_input, &cur_item_ident).expect("TODO: panic message"); }
+
+        process_category_update(w_obj, &key_delimiter, &cat_input, &cur_cat_ident).expect("TODO: panic message");
+
         Ok(())
     }
 
     fn process_category_update(w_obj: &mut Wallet,
                                key_delimiter: &String,
                                cat_input: &String,
-                               cur_cat_ident: &String) -> () {}
+                               cur_cat_ident: &String) -> Result<(), Error> {
+        if cat_input.contains(key_delimiter) {
+            let new_cat_ident: String = cat_input
+                .split(key_delimiter)
+                .collect::<Vec<&str>>()[1]
+                .to_string();
+
+            let cur_cat: &mut Category = w_obj.get_category(&cur_cat_ident).unwrap();
+
+            if new_cat_ident.is_empty() {
+                return Err(Error::new(ErrorKind::InvalidInput, "Error: new category identifier cannot be empty."));
+            }
+
+            cur_cat.set_ident(new_cat_ident);
+            let new_cat = cur_cat.clone();
+            w_obj.add_category(new_cat);
+            w_obj.delete_category(&cur_cat_ident);
+        }
+        Ok(())
+    }
 
     fn process_item_update(key_delimiter: &String,
-                           cur_cat: &Category,
+                           cur_cat: &mut Category,
                            item_input: &String,
-                           cur_item_ident: &String) -> () {}
+                           cur_item_ident: &String) -> Result<(), Error> {
+        if item_input.contains(key_delimiter) {
+            let new_item_ident: String = item_input
+                .split(key_delimiter)
+                .collect::<Vec<&str>>()[1]
+                .to_string();
+            let cur_item: &mut Item = cur_cat.get_item(&cur_item_ident).unwrap();
 
-    fn process_entry_update(args: Vec<String>,
+            if new_item_ident.is_empty() {
+                return Err(Error::new(ErrorKind::InvalidInput, "Error: new item identifier cannot be empty."));
+            }
+            cur_item.set_ident(new_item_ident);
+            let new_item = cur_item.clone();
+            cur_cat.add_item(new_item);
+            cur_cat.delete_item(&cur_item_ident);
+        }
+        Ok(())
+    }
+
+    fn process_entry_update(args: &Args,
                             key_delimiter: &String,
-                            cur_cat: &Category,
-                            cur_item_ident: &String) -> () {}
+                            cur_cat: &mut Category,
+                            cur_item_ident: &String) -> Result<(), Error> {
+        let cur_item: &mut Item = cur_cat.get_item(&cur_item_ident).unwrap();
+        let entry_input: String = args.clone().entry.unwrap();
+        let value_delimiter: String = String::from(",");
+
+        if entry_input.contains(key_delimiter)
+            && entry_input.contains(&value_delimiter) {
+            let input_vec = entry_input
+                .split(key_delimiter)
+                .collect::<Vec<&str>>();
+
+            let old_entry_ident: String = input_vec[0].to_string();
+            let update_vals: String = input_vec[1].to_string();
+
+            let update_vec = update_vals
+                .split(&value_delimiter)
+                .collect::<Vec<&str>>();
+        }
+
+        Ok(())
+    }
 
     fn execute_delete_action(args: Args, w_obj: &mut Wallet) -> Result<(), Error> {
         if args.category.is_none() {
