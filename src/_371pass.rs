@@ -418,6 +418,29 @@ mod tests {
             .get_item(&test_item).is_some());
         assert_eq!(w_obj2.get_category(&test_category).unwrap()
                        .get_item(&test_item).unwrap().size(), 0);
+
+        let args = app::Args {
+            database: file_path.clone(),
+            action: Some(String::from("create")),
+            category: Some(test_category.clone()),
+            item: Some(test_item.clone()),
+            entry: Some(test_entry.clone()),
+        };
+
+        assert!(app::run(args).is_ok());
+        let mut w_obj3 = Wallet::new();
+        assert!(w_obj3.empty());
+        assert!(w_obj3.load(&file_path));
+
+        assert!(w_obj3.get_category(&test_category).is_some());
+        assert_eq!(w_obj3.get_category(&test_category).unwrap().size(), 1);
+        assert!(w_obj3.get_category(&test_category).unwrap()
+            .get_item(&test_item).is_some());
+        assert_eq!(w_obj3.get_category(&test_category).unwrap()
+                       .get_item(&test_item).unwrap().size(), 1);
+        assert_eq!(w_obj3.get_category(&test_category).unwrap()
+                       .get_item(&test_item).unwrap()
+                       .get_entry(test_entry_key).unwrap(), test_entry_value);
     }
 
     #[test]
