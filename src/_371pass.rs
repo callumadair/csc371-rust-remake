@@ -116,7 +116,7 @@ pub mod app {
         } else {
             new_item.add_entry(entry_input, String::from(""));
         }
-
+        w_obj.save(&args.database);
         Ok(())
     }
 
@@ -376,6 +376,50 @@ mod tests {
         assert_eq!(result.unwrap(), app::Action::DELETE);
     }
 
+
+    #[test]
+    fn test_create_action() {
+        let file_path: String = String::from("./tests/testcreate.json");
+        assert!(Path::new(&file_path).exists());
+        let data = String::from(r#"{"Bank Accounts":{"Starling":{"Account Number":"12345678","Name":"Mr John Doe","Sort Code":"12-34-56"}},"Websites":{"Facebook":{"password":"pass1234fb","url":"https://www.facebook.com/","username":"example@gmail.com"},"Google":{"password":"pass1234","url":"https://www.google.com/","username":"example@gmail.com"},"Twitter":{"password":"r43rfsffdsfdsf","url":"https://www.twitter.com/","username":"example@gmail.com"}}}"#);
+        let mut file: fs::File = fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&file_path)
+            .expect("Unable to open file");
+        assert!(file.write(data.as_bytes()).is_ok());
+
+        let test_category: String = String::from("Test Category");
+        let test_item: String = String::from("Test Item");
+        let test_entry_key: String = String::from("Test Entry Key");
+        let test_entry_value: String = String::from("Test Entry Value");
+        let test_entry: String = format!("{},{}", test_entry_key, test_entry_value);
+
+        let mut w_obj = Wallet::new();
+        assert!(w_obj.empty());
+        assert!(w_obj.load(&file_path));
+
+        let args = app::Args {
+            database: file_path.clone(),
+            action: Some(String::from("create")),
+            category: Some(test_category.clone()),
+            item: Some(test_item.clone()),
+            entry: None,
+        };
+
+        assert!(app::run(args).is_ok());
+        let mut w_obj2 = Wallet::new();
+        assert!(w_obj2.empty());
+        assert!(w_obj2.load(&file_path));
+
+        assert!(w_obj2.get_category(&test_category).is_some());
+        assert_eq!(w_obj2.get_category(&test_category).unwrap().size(), 1);
+        assert!(w_obj2.get_category(&test_category).unwrap()
+            .get_item(&test_item).is_some());
+        assert_eq!(w_obj2.get_category(&test_category).unwrap()
+                       .get_item(&test_item).unwrap().size(), 0);
+    }
+
     #[test]
     fn test_read_action() {
         let file_path: String = String::from("./tests/testdatabase.json");
@@ -401,4 +445,10 @@ mod tests {
         wallet.load(&file_path);
         assert_eq!(data, app::generate_wallet_string(args, &mut wallet).unwrap());
     }
+
+    #[test]
+    fn test_delete_action() {}
+
+    #[test]
+    fn test_update_action() {}
 }
