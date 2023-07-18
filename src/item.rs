@@ -46,14 +46,14 @@ impl Item {
         }
     }
 
-    pub(crate) fn get_entry(&mut self, key: String) -> Option<String> {
-        return self.entries.get_mut(&key).cloned();
+    pub(crate) fn get_entry(&mut self, key: &String) -> Option<&mut String> {
+        return self.entries.get_mut(key);
     }
 
-    pub(crate) fn delete_entry(&mut self, key: String) -> bool {
-        if self.entries.contains_key(&key) {
-            self.entries.remove(&key);
-            return !self.entries.contains_key(&key);
+    pub(crate) fn delete_entry(&mut self, key: &String) -> bool {
+        if self.entries.contains_key(key) {
+            self.entries.remove(key);
+            return !self.entries.contains_key(key);
         }
         return false;
     }
@@ -107,7 +107,7 @@ mod tests {
         assert_eq!(item.add_entry(first_key.clone(), first_val.clone()), true);
         assert_eq!(item.size(), 1);
         assert_ne!(item.empty(), true);
-        assert_eq!(item.get_entry(String::from("url")).unwrap(), first_val);
+        assert_eq!(item.get_entry(&first_key).unwrap(), &first_val);
 
         //The add another entry with the same key.
         assert_eq!(item.add_entry(first_key.clone(), first_val.clone()), false);
@@ -121,7 +121,7 @@ mod tests {
         assert!(item.add_entry(second_key.clone(), second_val.clone()));
         assert_eq!(item.size(), 2);
         assert_ne!(item.empty(), true);
-        assert_eq!(item.get_entry(second_key.clone()).unwrap(), second_val);
+        assert_eq!(item.get_entry(&second_key).unwrap(), &second_val);
     }
 
     #[test]
@@ -135,15 +135,15 @@ mod tests {
         assert!(item.add_entry(first_key.clone(), first_val.clone()));
         assert_eq!(item.size(), 1);
         assert_ne!(item.empty(), true);
-        assert_eq!(item.get_entry(first_key.clone()).unwrap(), first_val);
+        assert_eq!(item.get_entry(&first_key).unwrap(), &first_val);
 
         //Delete non-existent entry and validate nothing changed.
-        assert_eq!(item.delete_entry(String::from("username")), false);
-        assert_eq!(item.get_entry(first_key.clone()).unwrap(), first_val);
+        assert_eq!(item.delete_entry(&String::from("username")), false);
+        assert_eq!(item.get_entry(&first_key).unwrap(), &first_val);
         assert_eq!(item.size(), 1);
 
         //Now delete the real entry and validate it is gone.
-        assert!(item.delete_entry(first_key.clone()));
+        assert!(item.delete_entry(&first_key));
         assert_eq!(item.size(), 0);
     }
 }

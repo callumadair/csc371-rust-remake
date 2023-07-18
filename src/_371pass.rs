@@ -40,7 +40,7 @@ pub mod app {
         pub(crate) entry: Option<String>,
     }
 
-    pub fn run(args: Args) -> Result<(), Error> {
+    pub fn run(args: &Args) -> Result<(), Error> {
         let db_filename = args.database.clone();
         let mut w_obj: Wallet = Wallet::new();
         w_obj.load(&db_filename);
@@ -78,7 +78,9 @@ pub mod app {
         };
     }
 
-    fn execute_create_action(args: Args, w_obj: &mut Wallet) -> Result<(), Error> {
+    fn execute_create_action(args: &Args, w_obj: &mut Wallet) -> Result<(), Error> {
+        let args = args.clone();
+
         if args.category.is_none() && (args.item.is_some() || args.entry.is_some()) {
             return Err(Error::new(ErrorKind::InvalidInput, "No category argument provided."));
         } else if args.category.is_none() {
@@ -120,13 +122,15 @@ pub mod app {
         Ok(())
     }
 
-    pub(crate) fn execute_read_action(args: Args, w_obj: &mut Wallet) -> Result<(), Error> {
+    pub(crate) fn execute_read_action(args: &Args, w_obj: &mut Wallet) -> Result<(), Error> {
         let result = generate_wallet_string(args, w_obj).unwrap();
         println!("{:?}", result);
         Ok(())
     }
 
-    pub(crate) fn generate_wallet_string(args: Args, w_obj: &mut Wallet) -> Result<String, Error> {
+    pub(crate) fn generate_wallet_string(args: &Args, w_obj: &mut Wallet) -> Result<String, Error> {
+        let args = args.clone();
+
         if args.category.is_none() && (args.item.is_some() || args.entry.is_some()) {
             return Err(Error::new(ErrorKind::InvalidInput, "No category argument provided."));
         }
@@ -155,7 +159,7 @@ pub mod app {
     }
 
 
-    fn execute_update_action(args: Args, w_obj: &mut Wallet) -> Result<(), Error> {
+    fn execute_update_action(args: &Args, w_obj: &mut Wallet) -> Result<(), Error> {
         if args.category.is_none() && args.item.is_none() && args.entry.is_none() {
             return Err(Error::new(ErrorKind::InvalidInput, "No category, item or entry argument provided."));
         }
@@ -267,12 +271,12 @@ pub mod app {
         Ok(())
     }
 
-    fn execute_delete_action(args: Args, w_obj: &mut Wallet) -> Result<(), Error> {
+    fn execute_delete_action(args: &Args, w_obj: &mut Wallet) -> Result<(), Error> {
         if args.category.is_none() {
             return Err(Error::new(ErrorKind::InvalidInput, "No category argument provided."));
         }
 
-        let cat_str = args.category.unwrap();
+        let cat_str = args.category.clone().unwrap();
 
         if args.item.is_none() && args.entry.is_some() {
             return Err(Error::new(ErrorKind::InvalidInput, "No item argument provided."));
@@ -283,7 +287,7 @@ pub mod app {
             return Ok(());
         }
 
-        let item_str = args.item.unwrap();
+        let item_str = args.item.clone().unwrap();
 
         if args.entry.is_none() {
             w_obj.get_category(&cat_str).unwrap()
@@ -293,7 +297,7 @@ pub mod app {
 
         w_obj.get_category(&cat_str).unwrap()
             .get_item(&item_str).unwrap()
-            .delete_entry(args.entry.unwrap());
+            .delete_entry(&args.entry.clone().unwrap());
 
         Ok(())
     }
@@ -303,19 +307,22 @@ pub mod app {
     }
 
     fn get_category_json(w: &mut Wallet, c: &String) -> String {
-        String::from(
-            serde_json::to_string(
-                w.get_category(c)
-                    .unwrap()).unwrap())
+        String::from(serde_json::to_string(
+            w.get_category(c)
+                .unwrap()).unwrap())
     }
 
     fn get_item_json(w: &mut Wallet, c: &String, i: &String) -> String {
-        String::from(serde_json::to_string(w.get_category(c).unwrap()
-            .get_item(i).unwrap()).unwrap())
+        String::from(serde_json::to_string(
+            w.get_category(c).unwrap()
+                .get_item(i).unwrap()).unwrap())
     }
 
-    fn get_entry_json(w: &Wallet, c: &String, i: &String, e: &String) -> String {
-        return String::from("");
+    fn get_entry_json(w: &mut Wallet, c: &String, i: &String, e: &String) -> String {
+        String::from(serde_json::to_string(
+            w.get_category(c).unwrap()
+                .get_item(i).unwrap()
+                .get_entry(e).unwrap()).unwrap())
     }
 }
 
@@ -407,7 +414,7 @@ mod tests {
             entry: None,
         };
 
-        assert!(app::run(args).is_ok());
+        assert!(app::run(&args).is_ok());
         let mut w_obj2 = Wallet::new();
         assert!(w_obj2.empty());
         assert!(w_obj2.load(&file_path));
@@ -427,7 +434,7 @@ mod tests {
             entry: Some(test_entry.clone()),
         };
 
-        assert!(app::run(args).is_ok());
+        assert!(app::run(&args).is_ok());
         let mut w_obj3 = Wallet::new();
         assert!(w_obj3.empty());
         assert!(w_obj3.load(&file_path));
@@ -440,7 +447,7 @@ mod tests {
                        .get_item(&test_item).unwrap().size(), 1);
         assert_eq!(w_obj3.get_category(&test_category).unwrap()
                        .get_item(&test_item).unwrap()
-                       .get_entry(test_entry_key).unwrap(), test_entry_value);
+                       .get_entry(&test_entry_key).unwrap(), &test_entry_value);
     }
 
     #[test]
@@ -463,15 +470,53 @@ mod tests {
             entry: None,
         };
 
-        // app::run(args).expect("Unable to run app.");
+        assert!(app::run(&args).is_ok());
         let mut wallet = Wallet::new();
         wallet.load(&file_path);
-        assert_eq!(data, app::generate_wallet_string(args, &mut wallet).unwrap());
+        assert_eq!(data, app::generate_wallet_string(&args, &mut wallet).unwrap());
     }
 
     #[test]
-    fn test_delete_action() {}
+    fn test_delete_action() {
+        let file_path: String = String::from("./tests/testdelete.json");
+        assert!(Path::new(&file_path).exists());
+        let data = String::from(r#"{"Bank Accounts":{"Starling":{"Account Number":"12345678","Name":"Mr John Doe","Sort Code":"12-34-56"}},"Websites":{"Facebook":{"password":"pass1234fb","url":"https://www.facebook.com/","username":"example@gmail.com"},"Google":{"password":"pass1234","url":"https://www.google.com/","username":"example@gmail.com"},"Twitter":{"password":"r43rfsffdsfdsf","url":"https://www.twitter.com/","username":"example@gmail.com"}}}"#);
+        let mut file: fs::File = fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&file_path)
+            .expect("Unable to open file");
+        assert!(file.write(data.as_bytes()).is_ok());
+
+        let test_category: String = String::from("Bank Accounts");
+        let test_item: String = String::from("Starling");
+        let test_entry_key: String = String::from("Account Number");
+
+        let args = app::Args {
+            database: String::from(file_path.clone()),
+            action: Some(String::from("delete")),
+            category: Some(test_category.clone()),
+            item: Some(test_item.clone()),
+            entry: Some(test_entry_key.clone()),
+        };
+
+        assert!(app::run(&args).is_ok());
+        let mut w_obj = Wallet::new();
+        assert!(w_obj.empty());
+        assert!(w_obj.load(&file_path));
+        assert!(w_obj.get_category(&test_category).is_none())
+    }
 
     #[test]
-    fn test_update_action() {}
+    fn test_update_action() {
+        let file_path: String = String::from("./tests/testupdate.json");
+        assert!(Path::new(&file_path).exists());
+        let data = String::from(r#"{"Bank Accounts":{"Starling":{"Account Number":"12345678","Name":"Mr John Doe","Sort Code":"12-34-56"}},"Websites":{"Facebook":{"password":"pass1234fb","url":"https://www.facebook.com/","username":"example@gmail.com"},"Google":{"password":"pass1234","url":"https://www.google.com/","username":"example@gmail.com"},"Twitter":{"password":"r43rfsffdsfdsf","url":"https://www.twitter.com/","username":"example@gmail.com"}}}"#);
+        let mut file: fs::File = fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&file_path)
+            .expect("Unable to open file");
+        assert!(file.write(data.as_bytes()).is_ok());
+    }
 }

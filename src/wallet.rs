@@ -84,6 +84,9 @@ impl Wallet {
 
 impl fmt::Display for Wallet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for category in self.categories.iter() {
+            write!(f, "{}", serde_json::to_string(&category).unwrap())?;
+        }
         return write!(f, "{}", "");
     }
 }
@@ -218,16 +221,16 @@ mod tests {
                        .get_item(&google).unwrap().size(), 3);
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&google).unwrap()
-                       .get_entry(String::from("url")).unwrap(),
-                   String::from("https://www.google.com/"));
+                       .get_entry(&String::from("url")).unwrap(),
+                   &String::from("https://www.google.com/"));
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&google).unwrap()
-                       .get_entry(String::from("username")).unwrap(),
-                   String::from("example@gmail.com"));
+                       .get_entry(&String::from("username")).unwrap(),
+                   &String::from("example@gmail.com"));
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&google).unwrap()
-                       .get_entry(String::from("password")).unwrap(),
-                   String::from("pass1234"));
+                       .get_entry(&String::from("password")).unwrap(),
+                   &String::from("pass1234"));
 
         let facebook: String = String::from("Facebook");
         assert!(wallet.get_category(&web).unwrap()
@@ -236,16 +239,16 @@ mod tests {
                        .get_item(&facebook).unwrap().size(), 3);
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&facebook).unwrap()
-                       .get_entry(String::from("url")).unwrap(),
-                   String::from("https://www.facebook.com/"));
+                       .get_entry(&String::from("url")).unwrap(),
+                   &String::from("https://www.facebook.com/"));
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&facebook).unwrap()
-                       .get_entry(String::from("username")).unwrap(),
-                   String::from("example@gmail.com"));
+                       .get_entry(&String::from("username")).unwrap(),
+                   &String::from("example@gmail.com"));
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&facebook).unwrap()
-                       .get_entry(String::from("password")).unwrap(),
-                   String::from("pass1234fb"));
+                       .get_entry(&String::from("password")).unwrap(),
+                   &String::from("pass1234fb"));
 
         let twitter: String = String::from("Twitter");
         assert!(wallet.get_category(&web).unwrap()
@@ -254,16 +257,16 @@ mod tests {
                        .get_item(&twitter).unwrap().size(), 3);
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&twitter).unwrap()
-                       .get_entry(String::from("url")).unwrap(),
-                   String::from("https://www.twitter.com/"));
+                       .get_entry(&String::from("url")).unwrap(),
+                   &String::from("https://www.twitter.com/"));
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&twitter).unwrap()
-                       .get_entry(String::from("username")).unwrap(),
-                   String::from("example@gmail.com"));
+                       .get_entry(&String::from("username")).unwrap(),
+                   &String::from("example@gmail.com"));
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&twitter).unwrap()
-                       .get_entry(String::from("password")).unwrap(),
-                   String::from("r43rfsffdsfdsf"));
+                       .get_entry(&String::from("password")).unwrap(),
+                   &String::from("r43rfsffdsfdsf"));
 
         let bank: String = String::from("Bank Accounts");
         assert!(wallet.get_category(&bank).is_some());
@@ -277,14 +280,14 @@ mod tests {
                        .get_item(&starling).unwrap().size(), 3);
         assert_eq!(wallet.get_category(&bank).unwrap()
                        .get_item(&starling).unwrap()
-                       .get_entry(String::from("Name")).unwrap(),
-                   String::from("Mr John Doe"));
+                       .get_entry(&String::from("Name")).unwrap(),
+                   &String::from("Mr John Doe"));
         assert_eq!(wallet.get_category(&bank).unwrap()
                        .get_item(&starling).unwrap()
-                       .get_entry(String::from("Account Number")).unwrap(), String::from("12345678"));
+                       .get_entry(&String::from("Account Number")).unwrap(), &String::from("12345678"));
         assert_eq!(wallet.get_category(&bank).unwrap()
                        .get_item(&starling).unwrap()
-                       .get_entry(String::from("Sort Code")).unwrap(), String::from("12-34-56"));
+                       .get_entry(&String::from("Sort Code")).unwrap(), &String::from("12-34-56"));
     }
 
     #[test]
