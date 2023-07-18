@@ -535,5 +535,50 @@ mod tests {
             .open(&file_path)
             .expect("Unable to open file");
         assert!(file.write(data.as_bytes()).is_ok());
+
+        let old_test_category: String = String::from("Bank Accounts");
+        let old_test_item: String = String::from("Starling");
+        let old_test_entry_key: String = String::from("Account Number");
+        let old_test_entry_value: String = String::from("12345678");
+
+        let new_test_category: String = String::from("Current Accounts");
+        let new_test_item: String = String::from("Santander");
+        let new_test_entry_key: String = String::from("Account");
+        let new_test_entry_value: String = String::from("87654321");
+
+        let mut w_obj: Wallet = Wallet::new();
+        assert!(w_obj.load(&file_path));
+
+        assert!(w_obj.get_category(&old_test_category).unwrap()
+            .get_item(&old_test_item).unwrap()
+            .get_entry(&old_test_entry_key).is_some());
+        assert_eq!(w_obj.get_category(&old_test_category).unwrap()
+                       .get_item(&old_test_item).unwrap()
+                       .get_entry(&old_test_entry_key).unwrap(), &old_test_entry_value);
+        assert!(w_obj.get_category(&new_test_category).unwrap()
+            .get_item(&new_test_item).unwrap()
+            .get_entry(&new_test_entry_key).is_none());
+
+        let args = app::Args {
+            database: String::from("./tests/testdelete.json"),
+            action: Some(String::from("update")),
+            category: Some(format!("{}:{}", old_test_category, new_test_category)),
+            item: Some(format!("{}:{}", old_test_item, new_test_item)),
+            entry: Some(format!("{}:{},{}", old_test_entry_key, new_test_entry_key, new_test_entry_value)),
+        };
+
+        assert!(app::run(&args).is_ok());
+        let mut w_obj: Wallet = Wallet::new();
+        assert!(w_obj.empty());
+        assert!(w_obj.load(&file_path));
+        assert!(w_obj.get_category(&old_test_category).unwrap()
+            .get_item(&old_test_item).unwrap()
+            .get_entry(&old_test_entry_key).is_none());
+        assert!(w_obj.get_category(&new_test_category).unwrap()
+            .get_item(&new_test_item).unwrap()
+            .get_entry(&new_test_entry_key).is_some());
+        assert_eq!(w_obj.get_category(&new_test_category).unwrap()
+                       .get_item(&new_test_item).unwrap()
+                       .get_entry(&new_test_entry_key).unwrap(), &new_test_entry_value);
     }
 }
