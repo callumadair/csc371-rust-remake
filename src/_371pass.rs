@@ -45,7 +45,7 @@ pub mod app {
         let mut w_obj: Wallet = Wallet::new();
         w_obj.load(&db_filename);
 
-        let action: Action = parse_action_argument(args.clone()).unwrap();
+        let action: Action = parse_action_argument(args).unwrap();
 
         match action {
             Action::READ =>
@@ -59,8 +59,8 @@ pub mod app {
         }
     }
 
-    pub(crate) fn parse_action_argument(args: Args) -> Result<Action, Error> {
-        let action: String = args.action.unwrap().to_uppercase();
+    pub(crate) fn parse_action_argument(args: &Args) -> Result<Action, Error> {
+        let action: String = args.action.clone().unwrap().to_uppercase();
 
         return match Some(action.as_str()) {
             None =>
@@ -350,7 +350,7 @@ mod tests {
         };
 
         let expected_error = Error::new(ErrorKind::InvalidInput, "Invalid action argument.");
-        let result = app::parse_action_argument(args.clone());
+        let result = app::parse_action_argument(&args);
 
         assert!(result.is_err());
         assert_eq!(result.as_ref()
@@ -363,22 +363,22 @@ mod tests {
                    expected_error.to_string());
 
         args.action = Some(String::from("create"));
-        let result = app::parse_action_argument(args.clone());
+        let result = app::parse_action_argument(&args);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), app::Action::CREATE);
 
         args.action = Some(String::from("read"));
-        let result = app::parse_action_argument(args.clone());
+        let result = app::parse_action_argument(&args);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), app::Action::READ);
 
         args.action = Some(String::from("update"));
-        let result = app::parse_action_argument(args.clone());
+        let result = app::parse_action_argument(&args);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), app::Action::UPDATE);
 
         args.action = Some(String::from("delete"));
-        let result = app::parse_action_argument(args.clone());
+        let result = app::parse_action_argument(&args);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), app::Action::DELETE);
     }
@@ -492,7 +492,7 @@ mod tests {
         let test_item: String = String::from("Starling");
         let test_entry_key: String = String::from("Account Number");
 
-        let args = app::Args {
+        let mut args = app::Args {
             database: String::from(file_path.clone()),
             action: Some(String::from("delete")),
             category: Some(test_category.clone()),
@@ -504,7 +504,24 @@ mod tests {
         let mut w_obj = Wallet::new();
         assert!(w_obj.empty());
         assert!(w_obj.load(&file_path));
-        assert!(w_obj.get_category(&test_category).is_none())
+        assert!(w_obj.get_category(&test_category).unwrap()
+            .get_item(&test_item).unwrap()
+            .get_entry(&test_entry_key).is_none());
+
+        args.entry = None;
+        assert!(app::run(&args).is_ok());
+        let mut w_obj: Wallet = Wallet::new();
+        assert!(w_obj.empty());
+        assert!(w_obj.load(&file_path));
+        assert!(w_obj.get_category(&test_category).unwrap()
+            .get_item(&test_item).is_none());
+
+        args.item = None;
+        assert!(app::run(&args).is_ok());
+        let mut w_obj: Wallet = Wallet::new();
+        assert!(w_obj.empty());
+        assert!(w_obj.load(&file_path));
+        assert!(w_obj.get_category(&test_category).is_none());
     }
 
     #[test]

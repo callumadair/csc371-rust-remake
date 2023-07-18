@@ -8,5 +8,6 @@ use clap::Parser;
 use crate::_371pass::app;
 
 fn main() -> Result<(), Error> {
-    return app::run(&app::Args::parse());
+    let args = app::Args::parse();
+    return app::run(&args);
 }
