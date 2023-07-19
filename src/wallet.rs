@@ -68,7 +68,7 @@ impl Wallet {
                 let mut new_item = new_category.new_item(item_ident);
 
                 for (entry_ident, entry_val) in item.as_object().unwrap() {
-                    new_item.add_entry(entry_ident.clone(), entry_val.as_str().unwrap().to_string());
+                    new_item.add_entry(&entry_ident, &entry_val.to_string());
                 }
             }
         }
@@ -315,18 +315,18 @@ mod tests {
 
         let mut item_1: Item = Item::new(ident_1.clone());
         let mut item_2: Item = Item::new(ident_2.clone());
-        item_1.add_entry(entry_key_1.clone(), entry_value_1.clone());
-        item_1.add_entry(entry_key_2.clone(), entry_value_2.clone());
-        item_2.add_entry(entry_key_1.clone(), entry_value_1.clone());
+        item_1.add_entry(&entry_key_1, &entry_value_1);
+        item_1.add_entry(&entry_key_2, &entry_value_2);
+        item_2.add_entry(&entry_key_1, &entry_value_1);
 
         assert_eq!(item_1.size(), 2);
         assert_eq!(item_2.size(), 1);
 
         let mut cat_1: Category = Category::new(ident_1.clone());
         let mut cat_2: Category = Category::new(ident_2.clone());
-        cat_1.add_item(item_1.clone());
-        cat_1.add_item(item_2.clone());
-        cat_2.add_item(item_1.clone());
+        cat_1.add_item(&item_1);
+        cat_1.add_item(&item_2);
+        cat_2.add_item(&item_1);
 
         assert_eq!(cat_1.size(), 2);
         assert_eq!(cat_2.size(), 1);

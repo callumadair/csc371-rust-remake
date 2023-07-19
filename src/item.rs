@@ -28,13 +28,13 @@ impl Item {
         return &self.identifier;
     }
 
-    pub(crate) fn set_ident(&mut self, identifier: String) {
-        self.identifier = identifier;
+    pub(crate) fn set_ident(&mut self, identifier: &String) {
+        self.identifier = identifier.clone();
     }
 
-    pub(crate) fn add_entry(&mut self, key: String, value: String) -> bool {
-        if !self.entries.contains_key(&key) {
-            self.entries.insert(key, value);
+    pub(crate) fn add_entry(&mut self, key: &String, value: &String) -> bool {
+        if !self.entries.contains_key(key) {
+            self.entries.insert(key.clone(), value.clone());
             return true;
         }
         return false;
@@ -42,7 +42,7 @@ impl Item {
 
     pub(crate) fn merge_entries(&mut self, other: &mut Item) -> () {
         for (key, value) in other.entries.iter() {
-            self.add_entry(key.clone(), value.clone());
+            self.add_entry(&key, &value);
         }
     }
 
@@ -71,7 +71,8 @@ impl fmt::Display for Item {
 
 impl PartialEq<Self> for Item {
     fn eq(&self, other: &Self) -> bool {
-        self.identifier == self.identifier && self.entries == other.entries
+        self.identifier == self.identifier
+            && self.entries == other.entries
     }
 }
 
@@ -104,13 +105,13 @@ mod tests {
         let first_key: String = String::from("url");
         let first_val: String = String::from("https://www.google.com");
 
-        assert_eq!(item.add_entry(first_key.clone(), first_val.clone()), true);
+        assert_eq!(item.add_entry(&first_key, &first_val), true);
         assert_eq!(item.size(), 1);
         assert_ne!(item.empty(), true);
         assert_eq!(item.get_entry(&first_key).unwrap(), &first_val);
 
         //The add another entry with the same key.
-        assert_eq!(item.add_entry(first_key.clone(), first_val.clone()), false);
+        assert_eq!(item.add_entry(&first_key, &first_val), false);
         assert_eq!(item.size(), 1);
         assert_ne!(item.empty(), true);
 
@@ -118,7 +119,7 @@ mod tests {
         let second_key: String = String::from("username");
         let second_val: String = String::from("myusername");
 
-        assert!(item.add_entry(second_key.clone(), second_val.clone()));
+        assert!(item.add_entry(&second_key, &second_val));
         assert_eq!(item.size(), 2);
         assert_ne!(item.empty(), true);
         assert_eq!(item.get_entry(&second_key).unwrap(), &second_val);
@@ -132,7 +133,7 @@ mod tests {
         let first_val: String = String::from("https://www.google.com");
 
         //Validate the details of the entry are correct
-        assert!(item.add_entry(first_key.clone(), first_val.clone()));
+        assert!(item.add_entry(&first_key, &first_val));
         assert_eq!(item.size(), 1);
         assert_ne!(item.empty(), true);
         assert_eq!(item.get_entry(&first_key).unwrap(), &first_val);

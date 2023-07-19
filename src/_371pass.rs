@@ -114,9 +114,9 @@ pub mod app {
                 .collect::<Vec<&str>>()[1]
                 .to_string();
 
-            new_item.add_entry(entry_identifier, entry_value);
+            new_item.add_entry(&entry_identifier, &entry_value);
         } else {
-            new_item.add_entry(entry_input, String::from(""));
+            new_item.add_entry(&entry_input, & String::from(""));
         }
         w_obj.save(&args.database);
         Ok(())
@@ -216,7 +216,7 @@ pub mod app {
                 return Err(Error::new(ErrorKind::InvalidInput, "Error: new category identifier cannot be empty."));
             }
 
-            cur_cat.set_ident(new_cat_ident);
+            cur_cat.set_ident(&new_cat_ident);
             let new_cat = cur_cat.clone();
             w_obj.add_category(new_cat);
             w_obj.delete_category(&cur_cat_ident);
@@ -238,9 +238,9 @@ pub mod app {
             if new_item_ident.is_empty() {
                 return Err(Error::new(ErrorKind::InvalidInput, "Error: new item identifier cannot be empty."));
             }
-            cur_item.set_ident(new_item_ident);
+            cur_item.set_ident(&new_item_ident);
             let new_item = cur_item.clone();
-            cur_cat.add_item(new_item);
+            cur_cat.add_item(&new_item);
             cur_cat.delete_item(&cur_item_ident);
         }
         Ok(())

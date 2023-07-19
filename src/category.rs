@@ -28,8 +28,8 @@ impl Category {
         return &self.identifier;
     }
 
-    pub(crate) fn set_ident(&mut self, identifier: String) -> () {
-        self.identifier = identifier;
+    pub(crate) fn set_ident(&mut self, identifier: &String) -> () {
+        self.identifier = identifier.clone();
     }
 
     pub(crate) fn new_item(&mut self, item_identifier: &String) -> &mut Item {
@@ -40,7 +40,7 @@ impl Category {
         return self.items.get_mut(item_identifier).unwrap();
     }
 
-    pub(crate) fn add_item(&mut self, item: Item) -> bool {
+    pub(crate) fn add_item(&mut self, item: &Item) -> bool {
         if self.items.contains_key(item.get_ident()) {
             return false;
         }
@@ -123,7 +123,7 @@ mod tests {
         let item_identifier: String = "Test_Item".to_string();
         let item: Item = Item::new(item_identifier.clone());
         assert!(item.empty());
-        assert!(category.add_item(item.clone()));
+        assert!(category.add_item(&item));
         assert_eq!(category.size(), 1);
         assert!(!category.empty());
         assert_eq!(category.get_item(&item_identifier).unwrap(), &item);
@@ -132,7 +132,7 @@ mod tests {
         //Now try to add a new item with the same identifier.
         let item2: Item = Item::new(item_identifier.clone());
         assert!(item2.empty());
-        assert!(!category.add_item(item2.clone()));
+        assert!(!category.add_item(&item2));
         assert_eq!(category.size(), 1);
         assert!(!category.empty());
 
@@ -140,7 +140,7 @@ mod tests {
         let item_identifier2: String = "Test_Item2".to_string();
         let item3: Item = Item::new(item_identifier2.clone());
         assert!(item3.empty());
-        assert!(category.add_item(item3.clone()));
+        assert!(category.add_item(&item3));
         assert_eq!(category.size(), 2);
         assert!(!category.empty());
         assert_eq!(category.get_item(&item_identifier2).unwrap(), &item3);
@@ -154,7 +154,7 @@ mod tests {
         let item_identifier: String = "Test_Item".to_string();
         let item: Item = Item::new(item_identifier.clone());
         assert!(item.empty());
-        assert!(category.add_item(item.clone()));
+        assert!(category.add_item(&item));
         assert_eq!(category.size(), 1);
         assert!(!category.empty());
         assert_eq!(category.get_item(&item_identifier).unwrap(), &item);
