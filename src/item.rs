@@ -33,11 +33,7 @@ impl Item {
     }
 
     pub(crate) fn add_entry(&mut self, key: &String, value: &String) -> bool {
-        if !self.entries.contains_key(key) {
-            self.entries.insert(key.clone(), value.clone());
-            return true;
-        }
-        return false;
+        return self.entries.insert(key.clone(), value.clone()).is_none();
     }
 
     pub(crate) fn merge_entries(&mut self, other: &mut Item) -> () {
@@ -51,11 +47,7 @@ impl Item {
     }
 
     pub(crate) fn delete_entry(&mut self, key: &String) -> bool {
-        if self.entries.contains_key(key) {
-            self.entries.remove(key);
-            return !self.entries.contains_key(key);
-        }
-        return false;
+        return self.entries.remove(key).is_some();
     }
 }
 
@@ -64,7 +56,6 @@ impl fmt::Display for Item {
         for entry in self.entries.iter() {
             write!(f, "{}", serde_json::to_string(&entry).unwrap())?;
         }
-
         return write!(f, "{}", "");
     }
 }
@@ -75,7 +66,6 @@ impl PartialEq<Self> for Item {
             && self.entries == other.entries
     }
 }
-
 
 impl Serialize for Item {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
@@ -105,13 +95,13 @@ mod tests {
         let first_key: String = String::from("url");
         let first_val: String = String::from("https://www.google.com");
 
-        assert_eq!(item.add_entry(&first_key, &first_val), true);
+        assert!(item.add_entry(&first_key, &first_val));
         assert_eq!(item.size(), 1);
         assert_ne!(item.empty(), true);
         assert_eq!(item.get_entry(&first_key).unwrap(), &first_val);
 
         //The add another entry with the same key.
-        assert_eq!(item.add_entry(&first_key, &first_val), false);
+        assert!(!item.add_entry(&first_key, &first_val));
         assert_eq!(item.size(), 1);
         assert_ne!(item.empty(), true);
 
@@ -139,7 +129,8 @@ mod tests {
         assert_eq!(item.get_entry(&first_key).unwrap(), &first_val);
 
         //Delete non-existent entry and validate nothing changed.
-        assert_eq!(item.delete_entry(&String::from("username")), false);
+        let username: String = String::from("username");
+        assert!(!item.delete_entry(&username));
         assert_eq!(item.get_entry(&first_key).unwrap(), &first_val);
         assert_eq!(item.size(), 1);
 

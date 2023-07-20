@@ -32,14 +32,7 @@ impl Wallet {
     }
 
     pub(crate) fn add_category(&mut self, category: Category) -> bool {
-        if self.categories.contains_key(category.get_ident()) {
-            return false;
-        }
-        self.categories.insert(category.get_ident().clone(), category.clone());
-        if self.categories.contains_key(category.get_ident()) {
-            return true;
-        }
-        return false;
+        return self.categories.insert(category.get_ident().clone(), category.clone()).is_none();
     }
 
     pub(crate) fn get_category(&mut self, category_identifier: &String) -> Option<&mut Category> {
@@ -50,11 +43,7 @@ impl Wallet {
     }
 
     pub(crate) fn delete_category(&mut self, category_identifier: &String) -> bool {
-        if self.categories.contains_key(category_identifier) {
-            self.categories.remove(category_identifier);
-            return !self.categories.contains_key(category_identifier);
-        }
-        return false;
+        return self.categories.remove(category_identifier).is_some();
     }
 
     pub(crate) fn load(&mut self, filename: &String) -> bool {

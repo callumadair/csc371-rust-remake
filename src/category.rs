@@ -41,14 +41,7 @@ impl Category {
     }
 
     pub(crate) fn add_item(&mut self, item: &Item) -> bool {
-        if self.items.contains_key(item.get_ident()) {
-            return false;
-        }
-        self.items.insert(item.get_ident().clone(), item.clone());
-        if self.items.contains_key(item.get_ident()) {
-            return true;
-        }
-        return false;
+        return self.items.insert(item.get_ident().clone(), item.clone()).is_none();
     }
 
     fn merge_items(&mut self, other: &mut Category) -> () {
@@ -69,11 +62,7 @@ impl Category {
     }
 
     pub(crate) fn delete_item(&mut self, item_identifier: &String) -> bool {
-        if self.items.contains_key(item_identifier) {
-            self.items.remove(item_identifier);
-            return !self.items.contains_key(item_identifier);
-        }
-        return false;
+        return self.items.remove(item_identifier).is_some();
     }
 }
 
