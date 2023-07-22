@@ -1,6 +1,7 @@
 use std::{collections::BTreeMap, fmt, fs};
 use serde::{Serialize, Deserialize, Serializer, ser::SerializeMap};
 use serde_json::Value;
+use unescape::unescape;
 use crate::category::Category;
 
 #[derive(Clone, Eq, Debug, Deserialize)]
@@ -57,7 +58,8 @@ impl Wallet {
                 let mut new_item = new_category.new_item(item_ident);
 
                 for (entry_ident, entry_val) in item.as_object().unwrap() {
-                    new_item.add_entry(&entry_ident, &entry_val.to_string());
+                    let entry_val = unescape(entry_val.as_str().unwrap());
+                    new_item.add_entry(&entry_ident, &entry_val.unwrap());
                 }
             }
         }
