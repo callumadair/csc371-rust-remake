@@ -55,10 +55,7 @@ impl Category {
     }
 
     pub(crate) fn get_item(&mut self, item_identifier: &String) -> Option<&mut Item> {
-        if self.items.contains_key(item_identifier) {
-            return self.items.get_mut(item_identifier);
-        }
-        panic!("Item {} not found in category {}", item_identifier, self.identifier);
+        return self.items.get_mut(item_identifier);
     }
 
     pub(crate) fn delete_item(&mut self, item_identifier: &String) -> bool {

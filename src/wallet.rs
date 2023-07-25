@@ -37,10 +37,7 @@ impl Wallet {
     }
 
     pub(crate) fn get_category(&mut self, category_identifier: &String) -> Option<&mut Category> {
-        if self.categories.contains_key(category_identifier) {
-            return self.categories.get_mut(category_identifier);
-        }
-        panic!("Category {} does not exist", category_identifier);
+        return self.categories.get_mut(category_identifier);
     }
 
     pub(crate) fn delete_category(&mut self, category_identifier: &String) -> bool {
