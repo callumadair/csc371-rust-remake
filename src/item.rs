@@ -17,15 +17,15 @@ impl Item {
     }
 
     pub(crate) fn size(&self) -> usize {
-        return self.entries.len();
+        self.entries.len()
     }
 
     pub(crate) fn empty(&self) -> bool {
-        return self.entries.is_empty();
+        self.entries.is_empty()
     }
 
     pub(crate) fn get_ident(&self) -> &String {
-        return &self.identifier;
+        &self.identifier
     }
 
     pub(crate) fn set_ident(&mut self, identifier: &String) {
@@ -33,10 +33,10 @@ impl Item {
     }
 
     pub(crate) fn add_entry(&mut self, key: &String, value: &String) -> bool {
-        return self.entries.insert(key.clone(), value.clone()).is_none();
+        self.entries.insert(key.clone(), value.clone()).is_none()
     }
 
-    pub(crate) fn merge_entries(&mut self, other: &mut Item) -> () {
+    pub(crate) fn merge_entries(&mut self, other: &mut Item) {
         for (key, value) in other.entries.iter() {
             self.add_entry(&key, &value);
         }
@@ -47,7 +47,7 @@ impl Item {
     }
 
     pub(crate) fn delete_entry(&mut self, key: &String) -> bool {
-        return self.entries.remove(key).is_some();
+        self.entries.remove(key).is_some()
     }
 }
 
@@ -56,7 +56,7 @@ impl fmt::Display for Item {
         for entry in self.entries.iter() {
             write!(f, "{}", serde_json::to_string(&entry).unwrap())?;
         }
-        return write!(f, "{}", "");
+        write!(f, "{}", "")
     }
 }
 
@@ -97,13 +97,13 @@ mod tests {
 
         assert!(item.add_entry(&first_key, &first_val));
         assert_eq!(item.size(), 1);
-        assert_ne!(item.empty(), true);
+        assert!(!item.empty());
         assert_eq!(item.get_entry(&first_key).unwrap(), &first_val);
 
         //The add another entry with the same key.
         assert!(!item.add_entry(&first_key, &first_val));
         assert_eq!(item.size(), 1);
-        assert_ne!(item.empty(), true);
+        assert!(!item.empty());
 
         //Now try with new key value pair.
         let second_key: String = String::from("username");
@@ -111,7 +111,7 @@ mod tests {
 
         assert!(item.add_entry(&second_key, &second_val));
         assert_eq!(item.size(), 2);
-        assert_ne!(item.empty(), true);
+        assert!(item.empty());
         assert_eq!(item.get_entry(&second_key).unwrap(), &second_val);
     }
 
@@ -125,7 +125,7 @@ mod tests {
         //Validate the details of the entry are correct
         assert!(item.add_entry(&first_key, &first_val));
         assert_eq!(item.size(), 1);
-        assert_ne!(item.empty(), true);
+        assert!(!item.empty());
         assert_eq!(item.get_entry(&first_key).unwrap(), &first_val);
 
         //Delete non-existent entry and validate nothing changed.

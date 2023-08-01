@@ -17,11 +17,11 @@ impl Wallet {
     }
 
     pub(crate) fn size(&self) -> usize {
-        return self.categories.len();
+         self.categories.len()
     }
 
     pub(crate) fn empty(&self) -> bool {
-        return self.categories.is_empty();
+         self.categories.is_empty()
     }
 
     pub(crate) fn new_category(&mut self, category_identifier: &String) -> &mut Category {
@@ -29,19 +29,19 @@ impl Wallet {
             return self.categories.get_mut(category_identifier).unwrap();
         }
         self.categories.insert(category_identifier.clone(), Category::new(category_identifier.clone()));
-        return self.categories.get_mut(category_identifier).unwrap();
+         self.categories.get_mut(category_identifier).unwrap()
     }
 
     pub(crate) fn add_category(&mut self, category: Category) -> bool {
-        return self.categories.insert(category.get_ident().clone(), category.clone()).is_none();
+         self.categories.insert(category.get_ident().clone(), category.clone()).is_none()
     }
 
     pub(crate) fn get_category(&mut self, category_identifier: &String) -> Option<&mut Category> {
-        return self.categories.get_mut(category_identifier);
+         self.categories.get_mut(category_identifier)
     }
 
     pub(crate) fn delete_category(&mut self, category_identifier: &String) -> bool {
-        return self.categories.remove(category_identifier).is_some();
+         self.categories.remove(category_identifier).is_some()
     }
 
     pub(crate) fn load(&mut self, filename: &String) -> bool {
@@ -49,24 +49,24 @@ impl Wallet {
         let wallet_values: Value = serde_json::from_str(&file_contents).unwrap();
 
         for (cat_ident, category) in wallet_values.as_object().unwrap() {
-            let mut new_category = self.new_category(cat_ident);
+            let new_category = self.new_category(cat_ident);
 
             for (item_ident, item) in category.as_object().unwrap() {
-                let mut new_item = new_category.new_item(item_ident);
+                let new_item = new_category.new_item(item_ident);
 
                 for (entry_ident, entry_val) in item.as_object().unwrap() {
                     let entry_val = unescape(entry_val.as_str().unwrap());
-                    new_item.add_entry(&entry_ident, &entry_val.unwrap());
+                    new_item.add_entry(entry_ident, &entry_val.unwrap());
                 }
             }
         }
-        return true;
+        true
     }
 
     pub(crate) fn save(&self, filename: &String) -> bool {
         let json_val: String = serde_json::to_string(&self).unwrap();
         fs::write(filename, json_val).expect("Unable to write file");
-        return true;
+         true
     }
 }
 
@@ -75,7 +75,7 @@ impl fmt::Display for Wallet {
         for category in self.categories.iter() {
             write!(f, "{}", serde_json::to_string(&category).unwrap())?;
         }
-        return write!(f, "{}", "");
+         write!(f, "{}", "")
     }
 }
 

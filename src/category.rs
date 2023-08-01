@@ -17,18 +17,18 @@ impl Category {
     }
 
     pub(crate) fn size(&self) -> usize {
-        return self.items.len();
+        self.items.len()
     }
 
     pub(crate) fn empty(&self) -> bool {
-        return self.items.is_empty();
+        self.items.is_empty()
     }
 
     pub(crate) fn get_ident(&self) -> &String {
-        return &self.identifier;
+        &self.identifier
     }
 
-    pub(crate) fn set_ident(&mut self, identifier: &String) -> () {
+    pub(crate) fn set_ident(&mut self, identifier: &String) {
         self.identifier = identifier.clone();
     }
 
@@ -37,14 +37,14 @@ impl Category {
             return self.items.get_mut(item_identifier).unwrap();
         }
         self.items.insert(item_identifier.clone(), Item::new(item_identifier.clone()));
-        return self.items.get_mut(item_identifier).unwrap();
+        self.items.get_mut(item_identifier).unwrap()
     }
 
     pub(crate) fn add_item(&mut self, item: &Item) -> bool {
-        return self.items.insert(item.get_ident().clone(), item.clone()).is_none();
+        self.items.insert(item.get_ident().clone(), item.clone()).is_none()
     }
 
-    fn merge_items(&mut self, other: &mut Category) -> () {
+    fn merge_items(&mut self, other: &mut Category) {
         for (key, value) in other.items.iter_mut() {
             if self.items.contains_key(key) {
                 self.items.get_mut(key).unwrap().merge_entries(value);
@@ -59,7 +59,7 @@ impl Category {
     }
 
     pub(crate) fn delete_item(&mut self, item_identifier: &String) -> bool {
-        return self.items.remove(item_identifier).is_some();
+        self.items.remove(item_identifier).is_some()
     }
 }
 
@@ -68,7 +68,7 @@ impl fmt::Display for Category {
         for item in self.items.iter() {
             write!(f, "{}", serde_json::to_string(&item).unwrap())?;
         }
-        return write!(f, "{}", "");
+        write!(f, "{}", "")
     }
 }
 

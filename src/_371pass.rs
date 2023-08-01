@@ -7,10 +7,10 @@ pub mod app {
 
     #[derive(Debug, PartialEq)]
     pub(crate) enum Action {
-        CREATE,
-        READ,
-        UPDATE,
-        DELETE,
+        Create,
+        Read,
+        Update,
+        Delete,
     }
 
     #[derive(Parser, Default, Debug, Clone)]
@@ -48,13 +48,13 @@ pub mod app {
         let action: Action = parse_action_argument(args).unwrap();
 
         match action {
-            Action::READ =>
+            Action::Read =>
                 execute_read_action(args, &mut w_obj),
-            Action::CREATE =>
+            Action::Create =>
                 execute_create_action(args, &mut w_obj),
-            Action::UPDATE =>
+            Action::Update =>
                 execute_update_action(args, &mut w_obj),
-            Action::DELETE =>
+            Action::Delete =>
                 execute_delete_action(args, &mut w_obj),
         }
     }
@@ -66,13 +66,13 @@ pub mod app {
             None =>
                 Err(Error::new(ErrorKind::InvalidInput, "No action argument provided.")),
             Some("CREATE") =>
-                Ok(Action::CREATE),
+                Ok(Action::Create),
             Some("READ") =>
-                Ok(Action::READ),
+                Ok(Action::Read),
             Some("UPDATE") =>
-                Ok(Action::UPDATE),
+                Ok(Action::Update),
             Some("DELETE") =>
-                Ok(Action::DELETE),
+                Ok(Action::Delete),
             Some(_) =>
                 Err(Error::new(ErrorKind::InvalidInput, "Invalid action argument.")),
         };
@@ -116,7 +116,7 @@ pub mod app {
 
             new_item.add_entry(&entry_identifier, &entry_value);
         } else {
-            new_item.add_entry(&entry_input, & String::from(""));
+            new_item.add_entry(&entry_input, &String::from(""));
         }
         w_obj.save(&args.database);
         Ok(())
@@ -152,10 +152,10 @@ pub mod app {
                                     &args.item.unwrap()));
         }
 
-        return Ok(get_entry_json(w_obj,
-                                 &args.category.unwrap(),
-                                 &args.item.unwrap(),
-                                 &args.entry.unwrap()));
+        Ok(get_entry_json(w_obj,
+                          &args.category.unwrap(),
+                          &args.item.unwrap(),
+                          &args.entry.unwrap()))
     }
 
 
@@ -303,26 +303,26 @@ pub mod app {
     }
 
     fn get_wallet_json(w: &Wallet) -> String {
-        String::from(serde_json::to_string(w).unwrap())
+        serde_json::to_string(w).unwrap()
     }
 
     fn get_category_json(w: &mut Wallet, c: &String) -> String {
-        String::from(serde_json::to_string(
+        serde_json::to_string(
             w.get_category(c)
-                .unwrap()).unwrap())
+                .unwrap()).unwrap()
     }
 
     fn get_item_json(w: &mut Wallet, c: &String, i: &String) -> String {
-        String::from(serde_json::to_string(
+        serde_json::to_string(
             w.get_category(c).unwrap()
-                .get_item(i).unwrap()).unwrap())
+                .get_item(i).unwrap()).unwrap()
     }
 
     fn get_entry_json(w: &mut Wallet, c: &String, i: &String, e: &String) -> String {
-        String::from(serde_json::to_string(
+        serde_json::to_string(
             w.get_category(c).unwrap()
                 .get_item(i).unwrap()
-                .get_entry(e).unwrap()).unwrap())
+                .get_entry(e).unwrap()).unwrap()
     }
 }
 
@@ -365,22 +365,22 @@ mod tests {
         args.action = Some(String::from("create"));
         let result = app::parse_action_argument(&args);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), app::Action::CREATE);
+        assert_eq!(result.unwrap(), app::Action::Create);
 
         args.action = Some(String::from("read"));
         let result = app::parse_action_argument(&args);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), app::Action::READ);
+        assert_eq!(result.unwrap(), app::Action::Read);
 
         args.action = Some(String::from("update"));
         let result = app::parse_action_argument(&args);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), app::Action::UPDATE);
+        assert_eq!(result.unwrap(), app::Action::Update);
 
         args.action = Some(String::from("delete"));
         let result = app::parse_action_argument(&args);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), app::Action::DELETE);
+        assert_eq!(result.unwrap(), app::Action::Delete);
     }
 
 
@@ -460,7 +460,7 @@ mod tests {
         assert!(file.write(data.as_bytes()).is_ok());
 
         let args = app::Args {
-            database: String::from(file_path.clone()),
+            database: file_path.clone(),
             action: Some(String::from("read")),
             category: None,
             item: None,
@@ -490,7 +490,7 @@ mod tests {
         let test_entry_key: String = String::from("Account Number");
 
         let mut args = app::Args {
-            database: String::from(file_path.clone()),
+            database: file_path.clone(),
             action: Some(String::from("delete")),
             category: Some(test_category.clone()),
             item: Some(test_item.clone()),
