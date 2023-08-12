@@ -1,6 +1,7 @@
 use std::{collections::BTreeMap, fmt, fs};
 use serde::{Serialize, Deserialize, Serializer, ser::SerializeMap};
 use serde_json::Value;
+use unescape::unescape;
 use crate::category::Category;
 
 #[derive(Clone, Eq, Debug, Deserialize)]
@@ -16,11 +17,11 @@ impl Wallet {
     }
 
     pub(crate) fn size(&self) -> usize {
-        return self.categories.len();
+         self.categories.len()
     }
 
     pub(crate) fn empty(&self) -> bool {
-        return self.categories.is_empty();
+         self.categories.is_empty()
     }
 
     pub(crate) fn new_category(&mut self, category_identifier: &String) -> &mut Category {
@@ -28,33 +29,19 @@ impl Wallet {
             return self.categories.get_mut(category_identifier).unwrap();
         }
         self.categories.insert(category_identifier.clone(), Category::new(category_identifier.clone()));
-        return self.categories.get_mut(category_identifier).unwrap();
+         self.categories.get_mut(category_identifier).unwrap()
     }
 
     pub(crate) fn add_category(&mut self, category: Category) -> bool {
-        if self.categories.contains_key(category.get_ident()) {
-            return false;
-        }
-        self.categories.insert(category.get_ident().clone(), category.clone());
-        if self.categories.contains_key(category.get_ident()) {
-            return true;
-        }
-        return false;
+         self.categories.insert(category.get_ident().clone(), category.clone()).is_none()
     }
 
     pub(crate) fn get_category(&mut self, category_identifier: &String) -> Option<&mut Category> {
-        if self.categories.contains_key(category_identifier) {
-            return self.categories.get_mut(category_identifier);
-        }
-        panic!("Category {} does not exist", category_identifier);
+         self.categories.get_mut(category_identifier)
     }
 
     pub(crate) fn delete_category(&mut self, category_identifier: &String) -> bool {
-        if self.categories.contains_key(category_identifier) {
-            self.categories.remove(category_identifier);
-            return !self.categories.contains_key(category_identifier);
-        }
-        return false;
+         self.categories.remove(category_identifier).is_some()
     }
 
     pub(crate) fn load(&mut self, filename: &String) -> bool {
@@ -62,29 +49,33 @@ impl Wallet {
         let wallet_values: Value = serde_json::from_str(&file_contents).unwrap();
 
         for (cat_ident, category) in wallet_values.as_object().unwrap() {
-            let mut new_category = self.new_category(cat_ident);
+            let new_category = self.new_category(cat_ident);
 
             for (item_ident, item) in category.as_object().unwrap() {
-                let mut new_item = new_category.new_item(item_ident);
+                let new_item = new_category.new_item(item_ident);
 
                 for (entry_ident, entry_val) in item.as_object().unwrap() {
-                    new_item.add_entry(entry_ident.clone(), entry_val.as_str().unwrap().to_string());
+                    let entry_val = unescape(entry_val.as_str().unwrap());
+                    new_item.add_entry(entry_ident, &entry_val.unwrap());
                 }
             }
         }
-        return true;
+        true
     }
 
     pub(crate) fn save(&self, filename: &String) -> bool {
         let json_val: String = serde_json::to_string(&self).unwrap();
         fs::write(filename, json_val).expect("Unable to write file");
-        return true;
+         true
     }
 }
 
 impl fmt::Display for Wallet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        return write!(f, "{}", "");
+        for category in self.categories.iter() {
+            write!(f, "{}", serde_json::to_string(&category).unwrap())?;
+        }
+         write!(f, "{}", "")
     }
 }
 
@@ -218,16 +209,16 @@ mod tests {
                        .get_item(&google).unwrap().size(), 3);
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&google).unwrap()
-                       .get_entry(String::from("url")).unwrap(),
-                   String::from("https://www.google.com/"));
+                       .get_entry(&String::from("url")).unwrap(),
+                   &String::from("https://www.google.com/"));
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&google).unwrap()
-                       .get_entry(String::from("username")).unwrap(),
-                   String::from("example@gmail.com"));
+                       .get_entry(&String::from("username")).unwrap(),
+                   &String::from("example@gmail.com"));
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&google).unwrap()
-                       .get_entry(String::from("password")).unwrap(),
-                   String::from("pass1234"));
+                       .get_entry(&String::from("password")).unwrap(),
+                   &String::from("pass1234"));
 
         let facebook: String = String::from("Facebook");
         assert!(wallet.get_category(&web).unwrap()
@@ -236,16 +227,16 @@ mod tests {
                        .get_item(&facebook).unwrap().size(), 3);
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&facebook).unwrap()
-                       .get_entry(String::from("url")).unwrap(),
-                   String::from("https://www.facebook.com/"));
+                       .get_entry(&String::from("url")).unwrap(),
+                   &String::from("https://www.facebook.com/"));
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&facebook).unwrap()
-                       .get_entry(String::from("username")).unwrap(),
-                   String::from("example@gmail.com"));
+                       .get_entry(&String::from("username")).unwrap(),
+                   &String::from("example@gmail.com"));
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&facebook).unwrap()
-                       .get_entry(String::from("password")).unwrap(),
-                   String::from("pass1234fb"));
+                       .get_entry(&String::from("password")).unwrap(),
+                   &String::from("pass1234fb"));
 
         let twitter: String = String::from("Twitter");
         assert!(wallet.get_category(&web).unwrap()
@@ -254,16 +245,16 @@ mod tests {
                        .get_item(&twitter).unwrap().size(), 3);
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&twitter).unwrap()
-                       .get_entry(String::from("url")).unwrap(),
-                   String::from("https://www.twitter.com/"));
+                       .get_entry(&String::from("url")).unwrap(),
+                   &String::from("https://www.twitter.com/"));
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&twitter).unwrap()
-                       .get_entry(String::from("username")).unwrap(),
-                   String::from("example@gmail.com"));
+                       .get_entry(&String::from("username")).unwrap(),
+                   &String::from("example@gmail.com"));
         assert_eq!(wallet.get_category(&web).unwrap()
                        .get_item(&twitter).unwrap()
-                       .get_entry(String::from("password")).unwrap(),
-                   String::from("r43rfsffdsfdsf"));
+                       .get_entry(&String::from("password")).unwrap(),
+                   &String::from("r43rfsffdsfdsf"));
 
         let bank: String = String::from("Bank Accounts");
         assert!(wallet.get_category(&bank).is_some());
@@ -277,14 +268,14 @@ mod tests {
                        .get_item(&starling).unwrap().size(), 3);
         assert_eq!(wallet.get_category(&bank).unwrap()
                        .get_item(&starling).unwrap()
-                       .get_entry(String::from("Name")).unwrap(),
-                   String::from("Mr John Doe"));
+                       .get_entry(&String::from("Name")).unwrap(),
+                   &String::from("Mr John Doe"));
         assert_eq!(wallet.get_category(&bank).unwrap()
                        .get_item(&starling).unwrap()
-                       .get_entry(String::from("Account Number")).unwrap(), String::from("12345678"));
+                       .get_entry(&String::from("Account Number")).unwrap(), &String::from("12345678"));
         assert_eq!(wallet.get_category(&bank).unwrap()
                        .get_item(&starling).unwrap()
-                       .get_entry(String::from("Sort Code")).unwrap(), String::from("12-34-56"));
+                       .get_entry(&String::from("Sort Code")).unwrap(), &String::from("12-34-56"));
     }
 
     #[test]
@@ -312,18 +303,18 @@ mod tests {
 
         let mut item_1: Item = Item::new(ident_1.clone());
         let mut item_2: Item = Item::new(ident_2.clone());
-        item_1.add_entry(entry_key_1.clone(), entry_value_1.clone());
-        item_1.add_entry(entry_key_2.clone(), entry_value_2.clone());
-        item_2.add_entry(entry_key_1.clone(), entry_value_1.clone());
+        item_1.add_entry(&entry_key_1, &entry_value_1);
+        item_1.add_entry(&entry_key_2, &entry_value_2);
+        item_2.add_entry(&entry_key_1, &entry_value_1);
 
         assert_eq!(item_1.size(), 2);
         assert_eq!(item_2.size(), 1);
 
         let mut cat_1: Category = Category::new(ident_1.clone());
         let mut cat_2: Category = Category::new(ident_2.clone());
-        cat_1.add_item(item_1.clone());
-        cat_1.add_item(item_2.clone());
-        cat_2.add_item(item_1.clone());
+        cat_1.add_item(&item_1);
+        cat_1.add_item(&item_2);
+        cat_2.add_item(&item_1);
 
         assert_eq!(cat_1.size(), 2);
         assert_eq!(cat_2.size(), 1);

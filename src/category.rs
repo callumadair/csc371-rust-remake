@@ -17,19 +17,19 @@ impl Category {
     }
 
     pub(crate) fn size(&self) -> usize {
-        return self.items.len();
+        self.items.len()
     }
 
     pub(crate) fn empty(&self) -> bool {
-        return self.items.is_empty();
+        self.items.is_empty()
     }
 
     pub(crate) fn get_ident(&self) -> &String {
-        return &self.identifier;
+        &self.identifier
     }
 
-    pub(crate) fn set_ident(&mut self, identifier: String) -> () {
-        self.identifier = identifier;
+    pub(crate) fn set_ident(&mut self, identifier: &String) {
+        self.identifier = identifier.clone();
     }
 
     pub(crate) fn new_item(&mut self, item_identifier: &String) -> &mut Item {
@@ -37,21 +37,14 @@ impl Category {
             return self.items.get_mut(item_identifier).unwrap();
         }
         self.items.insert(item_identifier.clone(), Item::new(item_identifier.clone()));
-        return self.items.get_mut(item_identifier).unwrap();
+        self.items.get_mut(item_identifier).unwrap()
     }
 
-    pub(crate) fn add_item(&mut self, item: Item) -> bool {
-        if self.items.contains_key(item.get_ident()) {
-            return false;
-        }
-        self.items.insert(item.get_ident().clone(), item.clone());
-        if self.items.contains_key(item.get_ident()) {
-            return true;
-        }
-        return false;
+    pub(crate) fn add_item(&mut self, item: &Item) -> bool {
+        self.items.insert(item.get_ident().clone(), item.clone()).is_none()
     }
 
-    fn merge_items(&mut self, other: &mut Category) -> () {
+    fn merge_items(&mut self, other: &mut Category) {
         for (key, value) in other.items.iter_mut() {
             if self.items.contains_key(key) {
                 self.items.get_mut(key).unwrap().merge_entries(value);
@@ -62,18 +55,11 @@ impl Category {
     }
 
     pub(crate) fn get_item(&mut self, item_identifier: &String) -> Option<&mut Item> {
-        if self.items.contains_key(item_identifier) {
-            return self.items.get_mut(item_identifier);
-        }
-        panic!("Item {} not found in category {}", item_identifier, self.identifier);
+        return self.items.get_mut(item_identifier);
     }
 
     pub(crate) fn delete_item(&mut self, item_identifier: &String) -> bool {
-        if self.items.contains_key(item_identifier) {
-            self.items.remove(item_identifier);
-            return !self.items.contains_key(item_identifier);
-        }
-        return false;
+        self.items.remove(item_identifier).is_some()
     }
 }
 
@@ -82,7 +68,7 @@ impl fmt::Display for Category {
         for item in self.items.iter() {
             write!(f, "{}", serde_json::to_string(&item).unwrap())?;
         }
-        return write!(f, "{}", "");
+        write!(f, "{}", "")
     }
 }
 
@@ -123,7 +109,7 @@ mod tests {
         let item_identifier: String = "Test_Item".to_string();
         let item: Item = Item::new(item_identifier.clone());
         assert!(item.empty());
-        assert!(category.add_item(item.clone()));
+        assert!(category.add_item(&item));
         assert_eq!(category.size(), 1);
         assert!(!category.empty());
         assert_eq!(category.get_item(&item_identifier).unwrap(), &item);
@@ -132,7 +118,7 @@ mod tests {
         //Now try to add a new item with the same identifier.
         let item2: Item = Item::new(item_identifier.clone());
         assert!(item2.empty());
-        assert!(!category.add_item(item2.clone()));
+        assert!(!category.add_item(&item2));
         assert_eq!(category.size(), 1);
         assert!(!category.empty());
 
@@ -140,7 +126,7 @@ mod tests {
         let item_identifier2: String = "Test_Item2".to_string();
         let item3: Item = Item::new(item_identifier2.clone());
         assert!(item3.empty());
-        assert!(category.add_item(item3.clone()));
+        assert!(category.add_item(&item3));
         assert_eq!(category.size(), 2);
         assert!(!category.empty());
         assert_eq!(category.get_item(&item_identifier2).unwrap(), &item3);
@@ -154,7 +140,7 @@ mod tests {
         let item_identifier: String = "Test_Item".to_string();
         let item: Item = Item::new(item_identifier.clone());
         assert!(item.empty());
-        assert!(category.add_item(item.clone()));
+        assert!(category.add_item(&item));
         assert_eq!(category.size(), 1);
         assert!(!category.empty());
         assert_eq!(category.get_item(&item_identifier).unwrap(), &item);

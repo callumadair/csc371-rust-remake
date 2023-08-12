@@ -9,5 +9,5 @@ use crate::_371pass::app;
 
 fn main() -> Result<(), Error> {
     let args = app::Args::parse();
-    return app::run(&args);
+    app::run(&args)
 }
