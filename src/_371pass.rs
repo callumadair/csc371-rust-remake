@@ -16,7 +16,7 @@ pub mod app {
     #[derive(Parser, Default, Debug, Clone)]
     #[command(author = "Callum Adair",
     version,
-    about = "A remake of the Department of Computer Science at Swansea University's CSC371 Module Assignment written in Rust",
+    about = "A remake of the CSC371 Module Assignment from the Department of Computer Science at Swansea University written in Rust",
     long_about = None)]
     pub struct Args {
         /// Path of the database file
@@ -278,11 +278,12 @@ pub mod app {
 
         let cat_str = args.category.clone().unwrap();
 
-        if args.item.is_none() && args.entry.is_some() {
-            return Err(Error::new(ErrorKind::InvalidInput, "No item argument provided."));
-        }
-
         if args.item.is_none() {
+            if args.entry.is_some()
+            {
+                return Err(Error::new(ErrorKind::InvalidInput, "No item argument provided."));
+            }
+
             w_obj.delete_category(&cat_str);
             return Ok(());
         }
