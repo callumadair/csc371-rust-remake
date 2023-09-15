@@ -1,11 +1,11 @@
 pub mod _371pass;
-mod wallet;
 mod category;
 mod item;
+mod wallet;
 
-use std::io::Error;
-use clap::Parser;
 use crate::_371pass::app;
+use clap::Parser;
+use std::io::Error;
 
 fn main() -> Result<(), Error> {
     let args = app::Args::parse();

@@ -1,5 +1,5 @@
-use std::{fmt, collections::BTreeMap};
-use serde::{Serialize, Deserialize, Serializer, ser::SerializeMap};
+use serde::{ser::SerializeMap, Deserialize, Serialize, Serializer};
+use std::{collections::BTreeMap, fmt};
 
 #[derive(Clone, Eq, Debug, Deserialize)]
 pub(crate) struct Item {
@@ -62,14 +62,17 @@ impl fmt::Display for Item {
 
 impl PartialEq<Self> for Item {
     fn eq(&self, other: &Self) -> bool {
-        self.identifier == self.identifier
-            && self.entries == other.entries
+        self.identifier == self.identifier && self.entries == other.entries
     }
 }
 
 impl Serialize for Item {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-        let mut map: <S as Serializer>::SerializeMap = serializer.serialize_map(Some(self.entries.len()))?;
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map: <S as Serializer>::SerializeMap =
+            serializer.serialize_map(Some(self.entries.len()))?;
         for (key, value) in &self.entries {
             map.serialize_entry(&key, &value)?;
         }

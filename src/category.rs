@@ -1,6 +1,6 @@
-use std::{fmt, collections::BTreeMap};
-use serde::{Serialize, Deserialize, Serializer, ser::SerializeMap};
 use crate::item::Item;
+use serde::{ser::SerializeMap, Deserialize, Serialize, Serializer};
+use std::{collections::BTreeMap, fmt};
 
 #[derive(Clone, Eq, Debug, Deserialize)]
 pub(crate) struct Category {
@@ -36,12 +36,15 @@ impl Category {
         if self.items.contains_key(item_identifier) {
             return self.items.get_mut(item_identifier).unwrap();
         }
-        self.items.insert(item_identifier.clone(), Item::new(item_identifier.clone()));
+        self.items
+            .insert(item_identifier.clone(), Item::new(item_identifier.clone()));
         self.items.get_mut(item_identifier).unwrap()
     }
 
     pub(crate) fn add_item(&mut self, item: &Item) -> bool {
-        self.items.insert(item.get_ident().clone(), item.clone()).is_none()
+        self.items
+            .insert(item.get_ident().clone(), item.clone())
+            .is_none()
     }
 
     fn merge_items(&mut self, other: &mut Category) {
@@ -79,8 +82,12 @@ impl PartialEq<Self> for Category {
 }
 
 impl Serialize for Category {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-        let mut map: <S as Serializer>::SerializeMap = serializer.serialize_map(Some(self.items.len()))?;
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map: <S as Serializer>::SerializeMap =
+            serializer.serialize_map(Some(self.items.len()))?;
 
         for (item_identifier, item_contents) in &self.items {
             map.serialize_entry(&item_identifier, &item_contents)?;
@@ -88,7 +95,6 @@ impl Serialize for Category {
         map.end()
     }
 }
-
 
 #[cfg(test)]
 mod tests {
