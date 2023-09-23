@@ -97,13 +97,13 @@ pub mod app {
                 "No item argument provided.",
             ));
         } else if args.item.is_none() {
-            Ok(())
+            return Ok(());
         }
 
         let new_item: &mut Item = new_category.new_item(&args.item.unwrap());
 
         if args.entry.is_none() {
-            Ok(())
+            return Ok(());
         }
 
         let entry_input: String = args.entry.unwrap();
@@ -133,14 +133,14 @@ pub mod app {
         let args = args.clone();
 
         if args.category.is_none() && (args.item.is_some() || args.entry.is_some()) {
-            Err(Error::new(
+            return Err(Error::new(
                 ErrorKind::InvalidInput,
                 "No category argument provided.",
-            ))
+            ));
         }
 
         if args.category.is_none() {
-            Ok(get_wallet_json(w_obj))
+            return Ok(get_wallet_json(w_obj));
         }
 
         if args.item.is_none() && args.entry.is_some() {
@@ -153,11 +153,11 @@ pub mod app {
         }
 
         if args.entry.is_none() {
-            Ok(get_item_json(
+            return Ok(get_item_json(
                 w_obj,
                 &args.category.unwrap(),
                 &args.item.unwrap(),
-            ))
+            ));
         }
 
         Ok(get_entry_json(
@@ -183,11 +183,11 @@ pub mod app {
             ));
         }
 
-        let key_delimiter: String = String::from(":");
+        let key_delimiter: char = ':';
         let cat_input: String = args.clone().category.unwrap();
 
         let cur_cat_ident: String = if cat_input.contains(",") {
-            cat_input.split(&key_delimiter).collect::<Vec<&str>>()[0].to_string()
+            cat_input.split(key_delimiter).collect::<Vec<&str>>()[0].to_string()
         } else {
             cat_input.clone()
         };
@@ -201,23 +201,23 @@ pub mod app {
 
         let cur_cat: &mut Category = w_obj.get_category(&cur_cat_ident).unwrap();
         let item_input: String = args.clone().item.unwrap();
-        let cur_item_ident: String = if item_input.contains(&key_delimiter) {
-            item_input.split(&key_delimiter).collect::<Vec<&str>>()[0].to_string()
+        let cur_item_ident: String = if item_input.contains(key_delimiter) {
+            item_input.split(key_delimiter).collect::<Vec<&str>>()[0].to_string()
         } else {
             item_input.clone()
         };
 
         if args.entry.is_some() {
-            process_entry_update(&args, &key_delimiter, cur_cat, &cur_item_ident)
+            process_entry_update(&args, key_delimiter, cur_cat, &cur_item_ident)
                 .expect("TODO: panic message");
         }
 
         if args.item.is_some() {
-            process_item_update(&key_delimiter, cur_cat, &item_input, &cur_item_ident)
+            process_item_update(key_delimiter, cur_cat, &item_input, &cur_item_ident)
                 .expect("TODO: panic message");
         }
 
-        process_category_update(w_obj, &key_delimiter, &cat_input, &cur_cat_ident)
+        process_category_update(w_obj, key_delimiter, &cat_input, &cur_cat_ident)
             .expect("TODO: panic message");
 
         Ok(())
@@ -225,7 +225,7 @@ pub mod app {
 
     fn process_category_update(
         w_obj: &mut Wallet,
-        key_delimiter: &String,
+        key_delimiter: char,
         cat_input: &String,
         cur_cat_ident: &String,
     ) -> Result<(), Error> {
@@ -251,7 +251,7 @@ pub mod app {
     }
 
     fn process_item_update(
-        key_delimiter: &String,
+        key_delimiter: char,
         cur_cat: &mut Category,
         item_input: &String,
         cur_item_ident: &String,
@@ -277,21 +277,22 @@ pub mod app {
 
     fn process_entry_update(
         args: &Args,
-        key_delimiter: &String,
+        key_delimiter: char,
         cur_cat: &mut Category,
         cur_item_ident: &String,
     ) -> Result<(), Error> {
         let cur_item: &mut Item = cur_cat.get_item(&cur_item_ident).unwrap();
         let entry_input: String = args.clone().entry.unwrap();
-        let value_delimiter: String = String::from(",");
+        let value_delimiter: char = ',';
 
-        if entry_input.contains(key_delimiter) && entry_input.contains(&value_delimiter) {
-            let input_vec = entry_input.split(key_delimiter).collect::<Vec<&str>>();
+        if entry_input.contains(key_delimiter) && entry_input.contains(value_delimiter) {
+            let input_vec = entry_input
+                .split([key_delimiter, value_delimiter])
+                .collect::<Vec<&str>>();
 
             let old_entry_ident: String = input_vec[0].to_string();
-            let update_vals: String = input_vec[1].to_string();
-
-            let update_vec = update_vals.split(&value_delimiter).collect::<Vec<&str>>();
+            let new_entry_ident = input_vec[1].to_string();
+            let new_entry_val = input_vec[2].to_string();
         }
 
         Ok(())
