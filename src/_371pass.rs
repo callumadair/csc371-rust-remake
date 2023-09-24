@@ -285,14 +285,37 @@ pub mod app {
         let entry_input: String = args.clone().entry.unwrap();
         let value_delimiter: char = ',';
 
-        if entry_input.contains(key_delimiter) && entry_input.contains(value_delimiter) {
-            let input_vec = entry_input
-                .split([key_delimiter, value_delimiter])
-                .collect::<Vec<&str>>();
+        let input_vec: Vec<&str> = entry_input
+            .split([key_delimiter, value_delimiter])
+            .collect::<Vec<&str>>();
 
-            let old_entry_ident: String = input_vec[0].to_string();
+        let entry_ident: String = input_vec[0].to_string();
+
+        // if !entry_input.contains([key_delimiter, value_delimiter]) {}
+
+        if entry_input.contains(key_delimiter) && entry_input.contains(value_delimiter) {
             let new_entry_ident = input_vec[1].to_string();
             let new_entry_val = input_vec[2].to_string();
+
+            cur_item.add_entry(&new_entry_ident, &new_entry_val);
+            cur_item.delete_entry(&entry_ident);
+        } else if entry_input.contains(key_delimiter) {
+            let new_entry_ident: String = input_vec[1].to_string();
+
+            if new_entry_ident.is_empty() {
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    "No replacement entry argument provided",
+                ));
+            }
+
+            let new_entry_val = cur_item.get_entry(&entry_ident).unwrap().clone();
+            cur_item.add_entry(&new_entry_ident, &new_entry_val);
+            cur_item.delete_entry(&entry_ident);
+        } else if entry_input.contains(value_delimiter) {
+            let new_entry_val = input_vec[1].to_string();
+            cur_item.delete_entry(&entry_ident);
+            cur_item.add_entry(&entry_ident, &new_entry_val);
         }
 
         Ok(())
