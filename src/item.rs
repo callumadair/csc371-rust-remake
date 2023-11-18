@@ -48,25 +48,36 @@ impl Item {
     pub(crate) fn add_entry(&mut self, key: &String, value: &String) -> Result<bool, ItemError> {
         let result = self.entries.insert(key.clone(), value.clone());
 
-        if let Some(_entry) = result {
+        if result.is_some() {
             return Ok(result.is_some());
-        } else {
-            Err(ItemError::AddEntryError)
         }
+        Err(ItemError::AddEntryError)
     }
 
     pub(crate) fn merge_entries(&mut self, other: &mut Item) -> Result<(), ItemError> {
         for (key, value) in other.entries.iter() {
-            self.add_entry(&key, &value);
+            self.add_entry(key, value)?;
         }
+        Ok(())
     }
 
     pub(crate) fn get_entry(&mut self, key: &String) -> Result<&mut String, ItemError> {
-        return self.entries.get_mut(key);
+        let entry_option = self.entries.get_mut(key);
+
+        if let Some(entry) = entry_option {
+            return Ok(entry);
+        }
+        Err(ItemError::EntryRetrievalError)
     }
 
     pub(crate) fn delete_entry(&mut self, key: &String) -> Result<bool, ItemError> {
-        self.entries.remove(key).is_some()
+        let result = self.entries.remove(key);
+
+        if result.is_some() {
+            Ok(result.is_some())
+        } else {
+            Err(ItemError::DeleteEntryError)
+        }
     }
 }
 
