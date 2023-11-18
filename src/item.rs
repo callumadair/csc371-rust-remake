@@ -90,6 +90,7 @@ impl fmt::Display for Item {
     }
 }
 
+#[deny(clippy::eq_op)]
 impl PartialEq<Self> for Item {
     fn eq(&self, other: &Self) -> bool {
         self.identifier == self.identifier && self.entries == other.entries
