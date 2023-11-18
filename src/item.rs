@@ -8,8 +8,6 @@ pub enum ItemError {
     AddEntryError,
     #[error("unable to delete entry")]
     DeleteEntryError,
-    #[error("merge entries failed")]
-    MergeEntriesError,
     #[error("failed to get entry from item")]
     EntryRetrievalError,
 }
@@ -129,13 +127,13 @@ mod tests {
         let first_key: String = String::from("url");
         let first_val: String = String::from("https://www.google.com");
 
-        assert!(item.add_entry(&first_key, &first_val));
+        assert!(item.add_entry(&first_key, &first_val).unwrap());
         assert_eq!(item.size(), 1);
         assert!(!item.empty());
         assert_eq!(item.get_entry(&first_key).unwrap(), &first_val);
 
         //The add another entry with the same key.
-        assert!(!item.add_entry(&first_key, &first_val));
+        assert!(!item.add_entry(&first_key, &first_val).unwrap());
         assert_eq!(item.size(), 1);
         assert!(!item.empty());
 
@@ -143,7 +141,7 @@ mod tests {
         let second_key: String = String::from("username");
         let second_val: String = String::from("myusername");
 
-        assert!(item.add_entry(&second_key, &second_val));
+        assert!(item.add_entry(&second_key, &second_val).unwrap());
         assert_eq!(item.size(), 2);
         assert!(item.empty());
         assert_eq!(item.get_entry(&second_key).unwrap(), &second_val);
@@ -157,19 +155,19 @@ mod tests {
         let first_val: String = String::from("https://www.google.com");
 
         //Validate the details of the entry are correct
-        assert!(item.add_entry(&first_key, &first_val));
+        assert!(item.add_entry(&first_key, &first_val).unwrap());
         assert_eq!(item.size(), 1);
         assert!(!item.empty());
         assert_eq!(item.get_entry(&first_key).unwrap(), &first_val);
 
         //Delete non-existent entry and validate nothing changed.
         let username: String = String::from("username");
-        assert!(!item.delete_entry(&username));
+        assert!(!item.delete_entry(&username).unwrap());
         assert_eq!(item.get_entry(&first_key).unwrap(), &first_val);
         assert_eq!(item.size(), 1);
 
         //Now delete the real entry and validate it is gone.
-        assert!(item.delete_entry(&first_key));
+        assert!(item.delete_entry(&first_key).unwrap());
         assert_eq!(item.size(), 0);
     }
 }
