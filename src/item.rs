@@ -1,5 +1,18 @@
 use serde::{ser::SerializeMap, Deserialize, Serialize, Serializer};
 use std::{collections::BTreeMap, fmt};
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ItemError {
+    #[error("entry unable to be added to item")]
+    AddEntryError,
+    #[error("unable to delete entry")]
+    DeleteEntryError,
+    #[error("merge entries failed")]
+    MergeEntriesError,
+    #[error("failed to get entry from item")]
+    EntryRetrievalError,
+}
 
 #[derive(Clone, Eq, Debug, Deserialize)]
 pub(crate) struct Item {
@@ -32,21 +45,27 @@ impl Item {
         self.identifier = identifier.clone();
     }
 
-    pub(crate) fn add_entry(&mut self, key: &String, value: &String) -> bool {
-        self.entries.insert(key.clone(), value.clone()).is_none()
+    pub(crate) fn add_entry(&mut self, key: &String, value: &String) -> Result<bool, ItemError> {
+        let result = self.entries.insert(key.clone(), value.clone());
+
+        if let Some(_entry) = result {
+            return Ok(result.is_some());
+        } else {
+            Err(ItemError::AddEntryError)
+        }
     }
 
-    pub(crate) fn merge_entries(&mut self, other: &mut Item) {
+    pub(crate) fn merge_entries(&mut self, other: &mut Item) -> Result<(), ItemError> {
         for (key, value) in other.entries.iter() {
             self.add_entry(&key, &value);
         }
     }
 
-    pub(crate) fn get_entry(&mut self, key: &String) -> Option<&mut String> {
+    pub(crate) fn get_entry(&mut self, key: &String) -> Result<&mut String, ItemError> {
         return self.entries.get_mut(key);
     }
 
-    pub(crate) fn delete_entry(&mut self, key: &String) -> bool {
+    pub(crate) fn delete_entry(&mut self, key: &String) -> Result<bool, ItemError> {
         self.entries.remove(key).is_some()
     }
 }
