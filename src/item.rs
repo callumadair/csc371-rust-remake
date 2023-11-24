@@ -1,16 +1,6 @@
+use crate::error::WalletError;
 use serde::{ser::SerializeMap, Deserialize, Serialize, Serializer};
 use std::{collections::BTreeMap, fmt};
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum ItemError {
-    #[error("entry unable to be added to item")]
-    AddEntryError,
-    #[error("unable to delete entry")]
-    DeleteEntryError,
-    #[error("failed to get entry from item")]
-    EntryRetrievalError,
-}
 
 #[derive(Clone, Eq, Debug, Deserialize)]
 pub(crate) struct Item {
@@ -43,38 +33,38 @@ impl Item {
         self.identifier = identifier.clone();
     }
 
-    pub(crate) fn add_entry(&mut self, key: &String, value: &String) -> Result<bool, ItemError> {
+    pub(crate) fn add_entry(&mut self, key: &String, value: &String) -> Result<bool, WalletError> {
         let result = self.entries.insert(key.clone(), value.clone());
 
         if result.is_some() {
             return Ok(result.is_some());
         }
-        Err(ItemError::AddEntryError)
+        Err(WalletError::InsertionError)
     }
 
-    pub(crate) fn merge_entries(&mut self, other: &mut Item) -> Result<(), ItemError> {
+    pub(crate) fn merge_entries(&mut self, other: &mut Item) -> Result<(), WalletError> {
         for (key, value) in other.entries.iter() {
             self.add_entry(key, value)?;
         }
         Ok(())
     }
 
-    pub(crate) fn get_entry(&mut self, key: &String) -> Result<&mut String, ItemError> {
+    pub(crate) fn get_entry(&mut self, key: &String) -> Result<&mut String, WalletError> {
         let entry_option = self.entries.get_mut(key);
 
         if let Some(entry) = entry_option {
             return Ok(entry);
         }
-        Err(ItemError::EntryRetrievalError)
+        Err(WalletError::RetrievalError)
     }
 
-    pub(crate) fn delete_entry(&mut self, key: &String) -> Result<bool, ItemError> {
+    pub(crate) fn delete_entry(&mut self, key: &String) -> Result<bool, WalletError> {
         let result = self.entries.remove(key);
 
         if result.is_some() {
             Ok(result.is_some())
         } else {
-            Err(ItemError::DeleteEntryError)
+            Err(WalletError::DeletionError)
         }
     }
 }

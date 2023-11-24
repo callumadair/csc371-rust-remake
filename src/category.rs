@@ -1,4 +1,5 @@
-use crate::item::Item;
+use crate::{error::WalletError, item::Item};
+use anyhow::Ok;
 use serde::{ser::SerializeMap, Deserialize, Serialize, Serializer};
 use std::{collections::BTreeMap, fmt};
 
@@ -47,18 +48,28 @@ impl Category {
             .is_none()
     }
 
-    fn merge_items(&mut self, other: &mut Category) {
+    fn merge_items(&mut self, other: &mut Category) -> Result<(), WalletError> {
         for (key, value) in other.items.iter_mut() {
             if self.items.contains_key(key) {
-                self.items.get_mut(key).unwrap().merge_entries(value);
+                self.items.get_mut(key).unwrap().merge_entries(value)?
             } else {
-                self.items.insert(key.clone(), value.clone());
+                let result = self.items.insert(key.clone(), value.clone());
+                if result.is_some() {
+                    return Ok(());
+                }
+                return Err(WalletError::MergeError);
             }
         }
+        Err(WalletError::MergeError)
     }
 
-    pub(crate) fn get_item(&mut self, item_identifier: &String) -> Option<&mut Item> {
-        return self.items.get_mut(item_identifier);
+    pub(crate) fn get_item(&mut self, item_identifier: &String) -> Result<&mut Item, WalletError> {
+        let result = self.items.get_mut(item_identifier);
+
+        if result.is_none() {
+            return Err(WalletError::RetrievalError);
+        }
+        Ok(item)
     }
 
     pub(crate) fn delete_item(&mut self, item_identifier: &String) -> bool {

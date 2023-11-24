@@ -25,7 +25,7 @@ pub mod app {
 
         /// Action to be performed
         #[arg(short, long)]
-        pub(crate) action: Option<String>,
+        pub(crate) action: Option<String>, 
 
         /// Name of the category if present
         #[arg(short, long)]
