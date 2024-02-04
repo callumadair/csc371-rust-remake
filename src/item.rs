@@ -36,10 +36,11 @@ impl Item {
     pub(crate) fn add_entry(&mut self, key: &String, value: &String) -> Result<bool, WalletError> {
         let result = self.entries.insert(key.clone(), value.clone());
 
-        if result.is_some() {
-            return Ok(result.is_some());
+        if self.entries.get(key).is_some() {
+            Ok(result.is_none())
+        } else {
+            Err(WalletError::InsertionError)
         }
-        Err(WalletError::InsertionError)
     }
 
     pub(crate) fn merge_entries(&mut self, other: &mut Item) -> Result<(), WalletError> {
@@ -62,10 +63,9 @@ impl Item {
         let result = self.entries.remove(key);
 
         if result.is_some() {
-            Ok(result.is_some())
-        } else {
-            Err(WalletError::DeletionError)
+            return Ok(result.is_some());
         }
+        Err(WalletError::DeletionError)
     }
 }
 
@@ -133,7 +133,7 @@ mod tests {
 
         assert!(item.add_entry(&second_key, &second_val).unwrap());
         assert_eq!(item.size(), 2);
-        assert!(item.empty());
+        assert!(!item.empty());
         assert_eq!(item.get_entry(&second_key).unwrap(), &second_val);
     }
 
@@ -152,7 +152,7 @@ mod tests {
 
         //Delete non-existent entry and validate nothing changed.
         let username: String = String::from("username");
-        assert!(!item.delete_entry(&username).unwrap());
+        assert!(item.delete_entry(&username).is_err());
         assert_eq!(item.get_entry(&first_key).unwrap(), &first_val);
         assert_eq!(item.size(), 1);
 

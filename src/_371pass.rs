@@ -1,10 +1,10 @@
 pub mod app {
-    use crate::{category::Category, item::Item, wallet::Wallet};
-    use clap::{arg, Parser};
-    use std::io::{Error, ErrorKind};
 
+    use crate::{category::Category, error::ArgsError, item::Item, wallet::Wallet};
+    use clap::{arg, Parser};
     const STUDENT_NUMBER: &str = "851784";
 
+    //Should probably impl for FromStr for this enum.
     #[derive(Debug, PartialEq)]
     pub(crate) enum Action {
         Create,
@@ -25,7 +25,7 @@ pub mod app {
 
         /// Action to be performed
         #[arg(short, long)]
-        pub(crate) action: Option<String>, 
+        pub(crate) action: Option<String>,
 
         /// Name of the category if present
         #[arg(short, long)]
@@ -40,10 +40,10 @@ pub mod app {
         pub(crate) entry: Option<String>,
     }
 
-    pub fn run(args: &Args) -> Result<(), Error> {
+    pub fn run(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         let db_filename = args.database.clone();
         let mut w_obj: Wallet = Wallet::new();
-        w_obj.load(&db_filename);
+        w_obj.load(&db_filename)?;
 
         let action: Action = parse_action_argument(args).unwrap();
 
@@ -55,52 +55,40 @@ pub mod app {
         }
     }
 
-    pub(crate) fn parse_action_argument(args: &Args) -> Result<Action, Error> {
+    pub(crate) fn parse_action_argument(args: &Args) -> Result<Action, ArgsError> {
         let action: String = args.action.clone().unwrap().to_uppercase();
 
         match Some(action.as_str()) {
-            None => Err(Error::new(
-                ErrorKind::InvalidInput,
-                "No action argument provided.",
-            )),
+            None => Err(ArgsError::MissingAction),
             Some("CREATE") => Ok(Action::Create),
             Some("READ") => Ok(Action::Read),
             Some("UPDATE") => Ok(Action::Update),
             Some("DELETE") => Ok(Action::Delete),
-            Some(_) => Err(Error::new(
-                ErrorKind::InvalidInput,
-                "Invalid action argument.",
-            )),
+            Some(_) => Err(ArgsError::InvalidAction),
         }
     }
 
-    fn execute_create_action(args: &Args, w_obj: &mut Wallet) -> Result<(), Error> {
+    fn execute_create_action(
+        args: &Args,
+        w_obj: &mut Wallet,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let args = args.clone();
 
         if args.category.is_none() && (args.item.is_some() || args.entry.is_some()) {
-            return Err(Error::new(
-                ErrorKind::InvalidInput,
-                "No category argument provided.",
-            ));
+            return Err(Box::new(ArgsError::MissingParentObject));
         } else if args.category.is_none() {
-            return Err(Error::new(
-                ErrorKind::InvalidInput,
-                "Error: missing category, item or entry argument(s).",
-            ));
+            return Err(Box::new(ArgsError::MissingCategory));
         }
 
-        let new_category: &mut Category = w_obj.new_category(&args.category.unwrap());
+        let new_category: &mut Category = w_obj.new_category(&args.category.unwrap())?;
 
         if args.item.is_none() && args.entry.is_some() {
-            return Err(Error::new(
-                ErrorKind::InvalidInput,
-                "No item argument provided.",
-            ));
+            return Err(Box::new(ArgsError::MissingParentObject));
         } else if args.item.is_none() {
             return Ok(());
         }
 
-        let new_item: &mut Item = new_category.new_item(&args.item.unwrap());
+        let new_item: &mut Item = new_category.new_item(&args.item.unwrap())?;
 
         if args.entry.is_none() {
             return Ok(());
@@ -115,49 +103,45 @@ pub mod app {
             let entry_value: String =
                 entry_input.split(&entry_delimiter).collect::<Vec<&str>>()[1].to_string();
 
-            new_item.add_entry(&entry_identifier, &entry_value);
+            new_item.add_entry(&entry_identifier, &entry_value)?;
         } else {
-            new_item.add_entry(&entry_input, &String::from(""));
+            new_item.add_entry(&entry_input, &String::from(""))?;
         }
-        w_obj.save(&args.database);
+        w_obj.save(&args.database)?;
         Ok(())
     }
 
-    pub(crate) fn execute_read_action(args: &Args, w_obj: &mut Wallet) -> Result<(), Error> {
-        let result = generate_wallet_string(args, w_obj).unwrap();
+    pub(crate) fn execute_read_action(
+        args: &Args,
+        w_obj: &mut Wallet,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let result = generate_wallet_string(args, w_obj)?;
         println!("{:?}", result);
         Ok(())
     }
 
-    pub(crate) fn generate_wallet_string(args: &Args, w_obj: &mut Wallet) -> Result<String, Error> {
+    pub(crate) fn generate_wallet_string(
+        args: &Args,
+        w_obj: &mut Wallet,
+    ) -> Result<String, Box<dyn std::error::Error>> {
         let args = args.clone();
 
         if args.category.is_none() && (args.item.is_some() || args.entry.is_some()) {
-            return Err(Error::new(
-                ErrorKind::InvalidInput,
-                "No category argument provided.",
-            ));
+            return Err(Box::new(ArgsError::MissingCategory));
         }
 
         if args.category.is_none() {
-            return Ok(get_wallet_json(w_obj));
+            return get_wallet_json(w_obj);
         }
 
         if args.item.is_none() && args.entry.is_some() {
-            return Err(Error::new(
-                ErrorKind::InvalidInput,
-                "No item argument provided.",
-            ));
+            return Err(Box::new(ArgsError::MissingItem));
         } else if args.item.is_none() {
-            return Ok(get_category_json(w_obj, &args.category.unwrap()));
+            return get_category_json(w_obj, &args.category.unwrap());
         }
 
         if args.entry.is_none() {
-            return Ok(get_item_json(
-                w_obj,
-                &args.category.unwrap(),
-                &args.item.unwrap(),
-            ));
+            return get_item_json(w_obj, &args.category.unwrap(), &args.item.unwrap());
         }
 
         Ok(get_entry_json(
@@ -168,19 +152,16 @@ pub mod app {
         ))
     }
 
-    fn execute_update_action(args: &Args, w_obj: &mut Wallet) -> Result<(), Error> {
+    fn execute_update_action(
+        args: &Args,
+        w_obj: &mut Wallet,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         if args.category.is_none() && args.item.is_none() && args.entry.is_none() {
-            return Err(Error::new(
-                ErrorKind::InvalidInput,
-                "No category, item or entry argument provided.",
-            ));
+            return Err(Box::new(ArgsError::NoObjectsSpecified));
         }
 
         if args.category.is_none() && (args.item.is_some() || args.entry.is_some()) {
-            return Err(Error::new(
-                ErrorKind::InvalidInput,
-                "Error: missing category argument(s).",
-            ));
+            return Err(Box::new(ArgsError::MissingCategory));
         }
 
         let key_delimiter: char = ':';
@@ -193,13 +174,10 @@ pub mod app {
         };
 
         if args.item.is_none() && args.entry.is_some() {
-            return Err(Error::new(
-                ErrorKind::InvalidInput,
-                "No item argument provided.",
-            ));
+            return Err(Box::new(ArgsError::MissingItem));
         }
 
-        let cur_cat: &mut Category = w_obj.get_category(&cur_cat_ident).unwrap();
+        let cur_cat: &mut Category = w_obj.get_category(&cur_cat_ident)?;
         let item_input: String = args.clone().item.unwrap();
         let cur_item_ident: String = if item_input.contains(key_delimiter) {
             item_input.split(key_delimiter).collect::<Vec<&str>>()[0].to_string()
@@ -208,17 +186,14 @@ pub mod app {
         };
 
         if args.entry.is_some() {
-            process_entry_update(&args, key_delimiter, cur_cat, &cur_item_ident)
-                .expect("TODO: panic message");
+            process_entry_update(&args, key_delimiter, cur_cat, &cur_item_ident)?;
         }
 
         if args.item.is_some() {
-            process_item_update(key_delimiter, cur_cat, &item_input, &cur_item_ident)
-                .expect("TODO: panic message");
+            process_item_update(key_delimiter, cur_cat, &item_input, &cur_item_ident)?;
         }
 
-        process_category_update(w_obj, key_delimiter, &cat_input, &cur_cat_ident)
-            .expect("TODO: panic message");
+        process_category_update(w_obj, key_delimiter, &cat_input, &cur_cat_ident)?;
 
         Ok(())
     }
@@ -228,24 +203,21 @@ pub mod app {
         key_delimiter: char,
         cat_input: &String,
         cur_cat_ident: &String,
-    ) -> Result<(), Error> {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         if cat_input.contains(key_delimiter) {
             let new_cat_ident: String =
                 cat_input.split(key_delimiter).collect::<Vec<&str>>()[1].to_string();
 
-            let cur_cat: &mut Category = w_obj.get_category(&cur_cat_ident).unwrap();
+            let cur_cat: &mut Category = w_obj.get_category(&cur_cat_ident)?;
 
             if new_cat_ident.is_empty() {
-                return Err(Error::new(
-                    ErrorKind::InvalidInput,
-                    "Error: new category identifier cannot be empty.",
-                ));
+                return Err(Box::new(ArgsError::InvalidCategory));
             }
 
             cur_cat.set_ident(&new_cat_ident);
             let new_cat = cur_cat.clone();
-            w_obj.add_category(new_cat);
-            w_obj.delete_category(&cur_cat_ident);
+            w_obj.add_category(new_cat)?;
+            w_obj.delete_category(&cur_cat_ident)?;
         }
         Ok(())
     }
@@ -255,22 +227,19 @@ pub mod app {
         cur_cat: &mut Category,
         item_input: &String,
         cur_item_ident: &String,
-    ) -> Result<(), Error> {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         if item_input.contains(key_delimiter) {
             let new_item_ident: String =
                 item_input.split(key_delimiter).collect::<Vec<&str>>()[1].to_string();
-            let cur_item: &mut Item = cur_cat.get_item(&cur_item_ident).unwrap();
+            let cur_item: &mut Item = cur_cat.get_item(&cur_item_ident)?;
 
             if new_item_ident.is_empty() {
-                return Err(Error::new(
-                    ErrorKind::InvalidInput,
-                    "Error: new item identifier cannot be empty.",
-                ));
+                return Err(Box::new(ArgsError::InvalidItem));
             }
             cur_item.set_ident(&new_item_ident);
             let new_item = cur_item.clone();
-            cur_cat.add_item(&new_item);
-            cur_cat.delete_item(&cur_item_ident);
+            cur_cat.add_item(&new_item)?;
+            cur_cat.delete_item(&cur_item_ident)?;
         }
         Ok(())
     }
@@ -280,8 +249,8 @@ pub mod app {
         key_delimiter: char,
         cur_cat: &mut Category,
         cur_item_ident: &String,
-    ) -> Result<(), Error> {
-        let cur_item: &mut Item = cur_cat.get_item(&cur_item_ident).unwrap();
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let cur_item: &mut Item = cur_cat.get_item(&cur_item_ident)?;
         let entry_input: String = args.clone().entry.unwrap();
         let value_delimiter: char = ',';
 
@@ -297,79 +266,75 @@ pub mod app {
             let new_entry_ident = input_vec[1].to_string();
             let new_entry_val = input_vec[2].to_string();
 
-            cur_item.add_entry(&new_entry_ident, &new_entry_val);
-            cur_item.delete_entry(&entry_ident);
+            cur_item.add_entry(&new_entry_ident, &new_entry_val)?;
+            cur_item.delete_entry(&entry_ident)?;
         } else if entry_input.contains(key_delimiter) {
             let new_entry_ident: String = input_vec[1].to_string();
 
             if new_entry_ident.is_empty() {
-                return Err(Error::new(
-                    ErrorKind::InvalidInput,
-                    "No replacement entry argument provided",
-                ));
+                return Err(Box::new(ArgsError::InvalidEntry));
             }
 
-            let new_entry_val = cur_item.get_entry(&entry_ident).unwrap().clone();
-            cur_item.add_entry(&new_entry_ident, &new_entry_val);
-            cur_item.delete_entry(&entry_ident);
+            let new_entry_val = cur_item.get_entry(&entry_ident)?.clone();
+            cur_item.add_entry(&new_entry_ident, &new_entry_val)?;
+            cur_item.delete_entry(&entry_ident)?;
         } else if entry_input.contains(value_delimiter) {
             let new_entry_val = input_vec[1].to_string();
-            cur_item.delete_entry(&entry_ident);
-            cur_item.add_entry(&entry_ident, &new_entry_val);
+            cur_item.delete_entry(&entry_ident)?;
+            cur_item.add_entry(&entry_ident, &new_entry_val)?;
         }
 
         Ok(())
     }
 
-    fn execute_delete_action(args: &Args, w_obj: &mut Wallet) -> Result<(), Error> {
+    fn execute_delete_action(
+        args: &Args,
+        w_obj: &mut Wallet,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         if args.category.is_none() {
-            return Err(Error::new(
-                ErrorKind::InvalidInput,
-                "No category argument provided.",
-            ));
+            return Err(Box::new(ArgsError::MissingCategory));
         }
 
         let cat_str = args.category.clone().unwrap();
 
         if args.item.is_none() {
             if args.entry.is_some() {
-                return Err(Error::new(
-                    ErrorKind::InvalidInput,
-                    "No item argument provided.",
-                ));
+                return Err(Box::new(ArgsError::MissingItem));
             }
 
-            w_obj.delete_category(&cat_str);
+            w_obj.delete_category(&cat_str)?;
             return Ok(());
         }
 
         let item_str = args.item.clone().unwrap();
 
         if args.entry.is_none() {
-            w_obj.get_category(&cat_str).unwrap().delete_item(&item_str);
+            w_obj.get_category(&cat_str)?.delete_item(&item_str)?;
             return Ok(());
         }
 
         w_obj
-            .get_category(&cat_str)
-            .unwrap()
-            .get_item(&item_str)
-            .unwrap()
-            .delete_entry(&args.entry.clone().unwrap());
+            .get_category(&cat_str)?
+            .get_item(&item_str)?
+            .delete_entry(&args.entry.clone().unwrap())?;
 
         Ok(())
     }
 
-    fn get_wallet_json(w: &Wallet) -> String {
-        serde_json::to_string(w).unwrap()
+    fn get_wallet_json(w: &Wallet) -> Result<String, Box<dyn std::error::Error>> {
+        Ok(serde_json::to_string(w).unwrap())
     }
 
-    fn get_category_json(w: &mut Wallet, c: &String) -> String {
-        serde_json::to_string(w.get_category(c).unwrap()).unwrap()
+    fn get_category_json(w: &mut Wallet, c: &String) -> Result<String, Box<dyn std::error::Error>> {
+        Ok(serde_json::to_string(w.get_category(c)?).unwrap())
     }
 
-    fn get_item_json(w: &mut Wallet, c: &String, i: &String) -> String {
-        serde_json::to_string(w.get_category(c).unwrap().get_item(i).unwrap()).unwrap()
+    fn get_item_json(
+        w: &mut Wallet,
+        c: &String,
+        i: &String,
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        Ok(serde_json::to_string(w.get_category(c)?.get_item(i)?).unwrap())
     }
 
     fn get_entry_json(w: &mut Wallet, c: &String, i: &String, e: &String) -> String {
@@ -387,7 +352,7 @@ pub mod app {
 
 #[cfg(test)]
 mod tests {
-    use crate::{_371pass::app, wallet::Wallet};
+    use crate::{_371pass::app, error::ArgsError, wallet::Wallet};
     use std::{
         fs,
         io::Write,
@@ -405,15 +370,11 @@ mod tests {
             entry: None,
         };
 
-        let expected_error = Error::new(ErrorKind::InvalidInput, "Invalid action argument.");
         let result = app::parse_action_argument(&args);
 
         assert!(result.is_err());
-        assert_eq!(result.as_ref().unwrap_err().kind(), expected_error.kind());
-        assert_eq!(
-            result.as_ref().unwrap_err().to_string(),
-            expected_error.to_string()
-        );
+        assert_eq!(result.as_ref().unwrap_err(), &ArgsError::InvalidAction);
+        assert!(result.is_err());
 
         args.action = Some(String::from("create"));
         let result = app::parse_action_argument(&args);
@@ -467,15 +428,15 @@ mod tests {
         assert!(app::run(&args).is_ok());
         let mut w_obj1 = Wallet::new();
         assert!(w_obj1.empty());
-        assert!(w_obj1.load(&file_path));
+        assert!(w_obj1.load(&file_path).is_ok());
 
-        assert!(w_obj1.get_category(&test_category_ident).is_some());
+        assert!(w_obj1.get_category(&test_category_ident).is_ok());
         assert_eq!(w_obj1.get_category(&test_category_ident).unwrap().size(), 1);
         assert!(w_obj1
             .get_category(&test_category_ident)
             .unwrap()
             .get_item(&test_item_ident)
-            .is_some());
+            .is_ok());
         assert_eq!(
             w_obj1
                 .get_category(&test_category_ident)
@@ -497,15 +458,15 @@ mod tests {
         assert!(app::run(&args).is_ok());
         let mut w_obj3 = Wallet::new();
         assert!(w_obj3.empty());
-        assert!(w_obj3.load(&file_path));
+        assert!(w_obj3.load(&file_path).is_ok());
 
-        assert!(w_obj3.get_category(&test_category_ident).is_some());
+        assert!(w_obj3.get_category(&test_category_ident).is_ok());
         assert_eq!(w_obj3.get_category(&test_category_ident).unwrap().size(), 1);
         assert!(w_obj3
             .get_category(&test_category_ident)
             .unwrap()
             .get_item(&test_item_ident)
-            .is_some());
+            .is_ok());
         assert_eq!(
             w_obj3
                 .get_category(&test_category_ident)
@@ -587,32 +548,32 @@ mod tests {
         assert!(app::run(&args).is_ok());
         let mut w_obj = Wallet::new();
         assert!(w_obj.empty());
-        assert!(w_obj.load(&file_path));
+        assert!(w_obj.load(&file_path).is_ok());
         assert!(w_obj
             .get_category(&test_category)
             .unwrap()
             .get_item(&test_item)
             .unwrap()
             .get_entry(&test_entry_key)
-            .is_none());
+            .is_err());
 
         args.entry = None;
         assert!(app::run(&args).is_ok());
         let mut w_obj: Wallet = Wallet::new();
         assert!(w_obj.empty());
-        assert!(w_obj.load(&file_path));
+        assert!(w_obj.load(&file_path).is_ok());
         assert!(w_obj
             .get_category(&test_category)
             .unwrap()
             .get_item(&test_item)
-            .is_none());
+            .is_err());
 
         args.item = None;
         assert!(app::run(&args).is_ok());
         let mut w_obj: Wallet = Wallet::new();
         assert!(w_obj.empty());
-        assert!(w_obj.load(&file_path));
-        assert!(w_obj.get_category(&test_category).is_none());
+        assert!(w_obj.load(&file_path).is_ok());
+        assert!(w_obj.get_category(&test_category).is_ok());
     }
 
     #[test]
@@ -640,7 +601,7 @@ mod tests {
         let new_test_entry_value: String = String::from("87654321");
 
         let mut w_obj: Wallet = Wallet::new();
-        assert!(w_obj.load(&file_path));
+        assert!(w_obj.load(&file_path).is_ok());
 
         assert!(w_obj
             .get_category(&old_test_category)
@@ -648,7 +609,7 @@ mod tests {
             .get_item(&old_test_item)
             .unwrap()
             .get_entry(&old_test_entry_key)
-            .is_some());
+            .is_ok());
         assert_eq!(
             w_obj
                 .get_category(&old_test_category)
@@ -665,7 +626,7 @@ mod tests {
             .get_item(&new_test_item)
             .unwrap()
             .get_entry(&new_test_entry_key)
-            .is_none());
+            .is_err());
 
         let args = app::Args {
             database: String::from("./tests/testdelete.json"),
@@ -681,21 +642,21 @@ mod tests {
         assert!(app::run(&args).is_ok());
         let mut w_obj: Wallet = Wallet::new();
         assert!(w_obj.empty());
-        assert!(w_obj.load(&file_path));
+        assert!(w_obj.load(&file_path).is_ok());
         assert!(w_obj
             .get_category(&old_test_category)
             .unwrap()
             .get_item(&old_test_item)
             .unwrap()
             .get_entry(&old_test_entry_key)
-            .is_none());
+            .is_err());
         assert!(w_obj
             .get_category(&new_test_category)
             .unwrap()
             .get_item(&new_test_item)
             .unwrap()
             .get_entry(&new_test_entry_key)
-            .is_some());
+            .is_ok());
         assert_eq!(
             w_obj
                 .get_category(&new_test_category)

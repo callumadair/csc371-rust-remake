@@ -1,14 +1,7 @@
-pub mod _371pass;
-mod category;
-mod error;
-mod item;
-mod wallet;
-
-use crate::_371pass::app;
 use clap::Parser;
-use std::io::Error;
+use csc371_remake::_371pass::app;
 
-fn main() -> Result<(), Error> {
+fn main() -> () {
     let args = app::Args::parse();
-    app::run(&args)
+    app::run(&args).expect("Bad things");
 }

@@ -1,5 +1,4 @@
 use crate::{error::WalletError, item::Item};
-use anyhow::Ok;
 use serde::{ser::SerializeMap, Deserialize, Serialize, Serializer};
 use std::{collections::BTreeMap, fmt};
 
@@ -33,19 +32,28 @@ impl Category {
         self.identifier = identifier.clone();
     }
 
-    pub(crate) fn new_item(&mut self, item_identifier: &String) -> &mut Item {
+    pub(crate) fn new_item(&mut self, item_identifier: &String) -> Result<&mut Item, WalletError> {
         if self.items.contains_key(item_identifier) {
-            return self.items.get_mut(item_identifier).unwrap();
+            return Ok(self.items.get_mut(item_identifier).unwrap());
         }
-        self.items
+        let result = self
+            .items
             .insert(item_identifier.clone(), Item::new(item_identifier.clone()));
-        self.items.get_mut(item_identifier).unwrap()
+
+        if result.is_some() {
+            return Ok(self.items.get_mut(item_identifier).unwrap());
+        }
+        Err(WalletError::CreationError)
     }
 
-    pub(crate) fn add_item(&mut self, item: &Item) -> bool {
-        self.items
-            .insert(item.get_ident().clone(), item.clone())
-            .is_none()
+    pub(crate) fn add_item(&mut self, item: &Item) -> Result<bool, WalletError> {
+        let result = self.items.insert(item.get_ident().clone(), item.clone());
+
+        if result.is_none() {
+            return Ok(result.is_none());
+        }
+
+        Err(WalletError::InsertionError)
     }
 
     fn merge_items(&mut self, other: &mut Category) -> Result<(), WalletError> {
@@ -64,16 +72,21 @@ impl Category {
     }
 
     pub(crate) fn get_item(&mut self, item_identifier: &String) -> Result<&mut Item, WalletError> {
-        let result = self.items.get_mut(item_identifier);
+        let item_option = self.items.get_mut(item_identifier);
 
-        if result.is_none() {
-            return Err(WalletError::RetrievalError);
+        if let Some(item) = item_option {
+            return Ok(item);
         }
-        Ok(item)
+        Err(WalletError::RetrievalError)
     }
 
-    pub(crate) fn delete_item(&mut self, item_identifier: &String) -> bool {
-        self.items.remove(item_identifier).is_some()
+    pub(crate) fn delete_item(&mut self, item_identifier: &String) -> Result<bool, WalletError> {
+        let result = self.items.remove(item_identifier);
+
+        if result.is_some() {
+            return Ok(result.is_some());
+        }
+        Err(WalletError::DeletionError)
     }
 }
 
@@ -126,7 +139,7 @@ mod tests {
         let item_identifier: String = "Test_Item".to_string();
         let item: Item = Item::new(item_identifier.clone());
         assert!(item.empty());
-        assert!(category.add_item(&item));
+        assert!(category.add_item(&item).unwrap());
         assert_eq!(category.size(), 1);
         assert!(!category.empty());
         assert_eq!(category.get_item(&item_identifier).unwrap(), &item);
@@ -135,7 +148,7 @@ mod tests {
         //Now try to add a new item with the same identifier.
         let item2: Item = Item::new(item_identifier.clone());
         assert!(item2.empty());
-        assert!(!category.add_item(&item2));
+        assert!(category.add_item(&item2).is_err());
         assert_eq!(category.size(), 1);
         assert!(!category.empty());
 
@@ -143,7 +156,7 @@ mod tests {
         let item_identifier2: String = "Test_Item2".to_string();
         let item3: Item = Item::new(item_identifier2.clone());
         assert!(item3.empty());
-        assert!(category.add_item(&item3));
+        assert!(category.add_item(&item3).unwrap());
         assert_eq!(category.size(), 2);
         assert!(!category.empty());
         assert_eq!(category.get_item(&item_identifier2).unwrap(), &item3);
@@ -157,7 +170,7 @@ mod tests {
         let item_identifier: String = "Test_Item".to_string();
         let item: Item = Item::new(item_identifier.clone());
         assert!(item.empty());
-        assert!(category.add_item(&item));
+        assert!(category.add_item(&item).unwrap());
         assert_eq!(category.size(), 1);
         assert!(!category.empty());
         assert_eq!(category.get_item(&item_identifier).unwrap(), &item);
@@ -165,13 +178,13 @@ mod tests {
 
         //Now try to delete an item that doesn't exist.
         let item_identifier2: String = "Test_Item2".to_string();
-        assert!(!category.delete_item(&item_identifier2));
+        assert!(category.delete_item(&item_identifier2).is_err());
         assert_eq!(category.get_item(&item_identifier).unwrap(), &item);
         assert_eq!(category.size(), 1);
         assert!(!category.empty());
 
         //Now delete the item that does exist.
-        assert!(category.delete_item(&item_identifier));
+        assert!(category.delete_item(&item_identifier).is_ok());
         //Check if an error is thrown when trying to get the item.
         //assert_eq!(category.get_item(&item_identifier), some error here);
         assert_eq!(category.size(), 0);

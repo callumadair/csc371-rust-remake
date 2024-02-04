@@ -1,4 +1,4 @@
-use crate::category::Category;
+use crate::{category::Category, error::WalletError};
 use serde::{ser::SerializeMap, Deserialize, Serialize, Serializer};
 use serde_json::Value;
 use std::{collections::BTreeMap, fmt, fs};
@@ -24,54 +24,91 @@ impl Wallet {
         self.categories.is_empty()
     }
 
-    pub(crate) fn new_category(&mut self, category_identifier: &String) -> &mut Category {
+    pub(crate) fn new_category(
+        &mut self,
+        category_identifier: &String,
+    ) -> Result<&mut Category, WalletError> {
         if self.categories.contains_key(category_identifier) {
-            return self.categories.get_mut(category_identifier).unwrap();
+            return Ok(self.categories.get_mut(category_identifier).unwrap());
         }
-        self.categories.insert(
+        let result = self.categories.insert(
             category_identifier.clone(),
             Category::new(category_identifier.clone()),
         );
-        self.categories.get_mut(category_identifier).unwrap()
+
+        if result.is_some() {
+            return Ok(self.categories.get_mut(category_identifier).unwrap());
+        }
+        Err(WalletError::CreationError)
     }
 
-    pub(crate) fn add_category(&mut self, category: Category) -> bool {
-        self.categories
-            .insert(category.get_ident().clone(), category.clone())
-            .is_none()
+    pub(crate) fn add_category(&mut self, category: Category) -> Result<bool, WalletError> {
+        let result = self
+            .categories
+            .insert(category.get_ident().clone(), category.clone());
+
+        if result.is_none() {
+            return Ok(result.is_none());
+        }
+
+        Err(WalletError::InsertionError)
     }
 
-    pub(crate) fn get_category(&mut self, category_identifier: &String) -> Option<&mut Category> {
-        self.categories.get_mut(category_identifier)
+    pub(crate) fn get_category(
+        &mut self,
+        category_identifier: &String,
+    ) -> Result<&mut Category, WalletError> {
+        let category_option = self.categories.get_mut(category_identifier);
+
+        if let Some(category) = category_option {
+            return Ok(category);
+        }
+        Err(WalletError::RetrievalError)
     }
 
-    pub(crate) fn delete_category(&mut self, category_identifier: &String) -> bool {
-        self.categories.remove(category_identifier).is_some()
+    pub(crate) fn delete_category(
+        &mut self,
+        category_identifier: &String,
+    ) -> Result<bool, WalletError> {
+        let result = self.categories.remove(category_identifier);
+
+        if result.is_some() {
+            return Ok(result.is_some());
+        }
+        Err(WalletError::DeletionError)
     }
 
-    pub(crate) fn load(&mut self, filename: &String) -> bool {
+    pub(crate) fn load(&mut self, filename: &String) -> Result<bool, WalletError> {
         let file_contents: String = fs::read_to_string(filename).unwrap();
         let wallet_values: Value = serde_json::from_str(&file_contents).unwrap();
 
         for (cat_ident, category) in wallet_values.as_object().unwrap() {
-            let new_category = self.new_category(cat_ident);
+            let new_category = self.new_category(cat_ident)?;
 
             for (item_ident, item) in category.as_object().unwrap() {
-                let new_item = new_category.new_item(item_ident);
+                let new_item = new_category.new_item(item_ident)?;
 
                 for (entry_ident, entry_val) in item.as_object().unwrap() {
                     let entry_val = unescape(entry_val.as_str().unwrap());
-                    new_item.add_entry(entry_ident, &entry_val.unwrap());
+                    new_item.add_entry(entry_ident, &entry_val.unwrap())?;
                 }
             }
         }
-        true
+        Ok(true)
     }
 
-    pub(crate) fn save(&self, filename: &String) -> bool {
-        let json_val: String = serde_json::to_string(&self).unwrap();
-        fs::write(filename, json_val).expect("Unable to write file");
-        true
+    pub(crate) fn save(&self, filename: &String) -> Result<bool, WalletError> {
+        let json_val = serde_json::to_string(&self);
+        if json_val.is_err() {
+            return Err(WalletError::SaveError);
+        }
+
+        let write_result = fs::write(filename, json_val.unwrap());
+        if write_result.is_err() {
+            return Err(WalletError::SaveError);
+        }
+
+        Ok(true)
     }
 }
 
@@ -126,7 +163,7 @@ mod tests {
         let first_cat_ident: String = String::from("Test");
         let first_category: Category = Category::new(first_cat_ident.clone());
         assert!(wallet.empty());
-        assert!(wallet.add_category(first_category.clone()));
+        assert!(wallet.add_category(first_category.clone()).unwrap());
         assert_eq!(wallet.size(), 1);
         assert!(!wallet.empty());
         assert_eq!(
@@ -136,14 +173,14 @@ mod tests {
 
         let second_category: Category = Category::new(first_cat_ident.clone());
         assert!(second_category.empty());
-        assert!(!wallet.add_category(second_category.clone()));
+        assert!(wallet.add_category(second_category.clone()).is_err());
         assert_eq!(wallet.size(), 1);
         assert!(!wallet.empty());
 
         let third_cat_ident: String = String::from("Test2");
         let third_category: Category = Category::new(third_cat_ident.clone());
         assert!(third_category.empty());
-        assert!(wallet.add_category(third_category.clone()));
+        assert!(wallet.add_category(third_category.clone()).unwrap());
         assert_eq!(wallet.size(), 2);
         assert!(!wallet.empty());
         assert_eq!(
@@ -159,14 +196,14 @@ mod tests {
         let first_cat_ident: String = String::from("Test");
         let first_category: Category = Category::new(first_cat_ident.clone());
         assert!(wallet.empty());
-        assert!(wallet.add_category(first_category.clone()));
+        assert!(wallet.add_category(first_category.clone()).unwrap());
         assert_eq!(wallet.size(), 1);
         assert!(!wallet.empty());
         assert_eq!(
             wallet.get_category(&first_cat_ident).unwrap(),
             &first_category
         );
-        assert!(wallet.delete_category(&first_cat_ident));
+        assert!(wallet.delete_category(&first_cat_ident).unwrap());
         //add exception check here
         assert_eq!(wallet.size(), 0);
     }
@@ -215,19 +252,15 @@ mod tests {
         let mut wallet: Wallet = Wallet::new();
         assert!(wallet.empty());
         //do error checking here instead of boolean checks.
-        assert!(wallet.load(&file_path));
+        assert!(wallet.load(&file_path).unwrap());
         assert_eq!(wallet.size(), 2);
 
         let web: String = String::from("Websites");
-        assert!(wallet.get_category(&web).is_some());
+        assert!(wallet.get_category(&web).is_ok());
         assert_eq!(wallet.get_category(&web).unwrap().size(), 3);
 
         let google: String = String::from("Google");
-        assert!(wallet
-            .get_category(&web)
-            .unwrap()
-            .get_item(&google)
-            .is_some());
+        assert!(wallet.get_category(&web).unwrap().get_item(&google).is_ok());
         assert_eq!(
             wallet
                 .get_category(&web)
@@ -273,7 +306,7 @@ mod tests {
             .get_category(&web)
             .unwrap()
             .get_item(&facebook)
-            .is_some());
+            .is_ok());
         assert_eq!(
             wallet
                 .get_category(&web)
@@ -319,7 +352,7 @@ mod tests {
             .get_category(&web)
             .unwrap()
             .get_item(&twitter)
-            .is_some());
+            .is_ok());
         assert_eq!(
             wallet
                 .get_category(&web)
@@ -361,7 +394,7 @@ mod tests {
         );
 
         let bank: String = String::from("Bank Accounts");
-        assert!(wallet.get_category(&bank).is_some());
+        assert!(wallet.get_category(&bank).is_ok());
         assert_eq!(wallet.get_category(&bank).unwrap().size(), 1);
 
         let starling: String = String::from("Starling");
@@ -369,7 +402,7 @@ mod tests {
             .get_category(&bank)
             .unwrap()
             .get_item(&starling)
-            .is_some());
+            .is_ok());
         assert_eq!(
             wallet
                 .get_category(&bank)
@@ -436,27 +469,33 @@ mod tests {
 
         let mut item_1: Item = Item::new(ident_1.clone());
         let mut item_2: Item = Item::new(ident_2.clone());
-        item_1.add_entry(&entry_key_1, &entry_value_1);
-        item_1.add_entry(&entry_key_2, &entry_value_2);
-        item_2.add_entry(&entry_key_1, &entry_value_1);
+        item_1
+            .add_entry(&entry_key_1, &entry_value_1)
+            .expect("error adding entry");
+        item_1
+            .add_entry(&entry_key_2, &entry_value_2)
+            .expect("error adding entry");
+        item_2
+            .add_entry(&entry_key_1, &entry_value_1)
+            .expect("error adding entry");
 
         assert_eq!(item_1.size(), 2);
         assert_eq!(item_2.size(), 1);
 
         let mut cat_1: Category = Category::new(ident_1.clone());
         let mut cat_2: Category = Category::new(ident_2.clone());
-        cat_1.add_item(&item_1);
-        cat_1.add_item(&item_2);
-        cat_2.add_item(&item_1);
+        cat_1.add_item(&item_1).expect("error adding item");
+        cat_1.add_item(&item_2).expect("error adding item");
+        cat_2.add_item(&item_1).expect("error adding item");
 
         assert_eq!(cat_1.size(), 2);
         assert_eq!(cat_2.size(), 1);
 
-        wallet.add_category(cat_1);
-        wallet.add_category(cat_2);
+        wallet.add_category(cat_1).expect("error adding category");
+        wallet.add_category(cat_2).expect("error adding category");
 
         assert_eq!(wallet.size(), 2);
-        assert!(wallet.save(&file_path));
+        assert!(wallet.save(&file_path).is_ok());
         let file_contents: String = fs::read_to_string(&file_path).expect("Unable to read file");
         let expected_contents: &str = r#"{"ident_1":{"ident_1":{"key_1":"value_1","key_2":"value_2"},"ident_2":{"key_1":"value_1"}},"ident_2":{"ident_1":{"key_1":"value_1","key_2":"value_2"}}}"#;
         assert_eq!(file_contents, expected_contents);
